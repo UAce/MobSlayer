@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_alignParentTop="true"
+    android:layout_centerHorizontal="true"
+    android:background="@color/white"
+    tools:context="com.yliu240.painbutton.MainActivity">
+
+    <pl.droidsonroids.gif.GifImageView
+        android:id="@+id/slimeGif"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/kingslime_animation"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp" />
+
+    <RelativeLayout
+        android:id="@+id/rl_elephant"
+        android:layout_width="match_parent"
+        android:layout_height="431dp"
+        android:layout_gravity="center">
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="999999"
+            android:textColor="@color/damage" />
+
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/transparent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/transparent" />
+
+    <ImageButton
+        android:id="@+id/imageButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        app:srcCompat="@drawable/baseline_volume_up_24" />
+
+
+</FrameLayout>
