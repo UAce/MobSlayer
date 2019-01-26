@@ -3,6 +3,8 @@ package com.yliu240.painbutton;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,6 +31,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //Start Bgm
+        final MediaPlayer bgm = MediaPlayer.create(MainActivity.this,R.raw.ellinia_bgm1);
+        bgm.start();
+        bgm.setLooping(true);
+
         final ImageButton sound = (ImageButton) findViewById(R.id.sound);
         Boolean clicked = new Boolean(false);
         sound.setTag(clicked); // wasn't clicked
@@ -37,10 +44,12 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if( ((Boolean)sound.getTag())==false ){
                     sound.setImageResource(R.drawable.baseline_volume_off_24);
+                    bgm.pause();
                     Toast.makeText(MainActivity.this, "Mute", Toast.LENGTH_SHORT).show();
                     sound.setTag(new Boolean(true));
                 }else{
                     sound.setImageResource(R.drawable.baseline_volume_up_24);
+                    bgm.start();
                     Toast.makeText(MainActivity.this, "Sound On", Toast.LENGTH_SHORT).show();
                     sound.setTag(new Boolean(false));
                 }
