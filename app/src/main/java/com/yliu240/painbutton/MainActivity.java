@@ -11,8 +11,10 @@ import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +28,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        final ImageButton sound = (ImageButton) findViewById(R.id.sound);
+        Boolean clicked = new Boolean(false);
+        sound.setTag(clicked); // wasn't clicked
+        sound.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if( ((Boolean)sound.getTag())==false ){
+                    sound.setImageResource(R.drawable.baseline_volume_off_24);
+                    Toast.makeText(MainActivity.this, "Mute", Toast.LENGTH_SHORT).show();
+                    sound.setTag(new Boolean(true));
+                }else{
+                    sound.setImageResource(R.drawable.baseline_volume_up_24);
+                    Toast.makeText(MainActivity.this, "Sound On", Toast.LENGTH_SHORT).show();
+                    sound.setTag(new Boolean(false));
+                }
+            }
+        });
 
         final ImageView imageView = (ImageView) findViewById(R.id.transparent);
         final GifImageView gifImageView = (GifImageView) findViewById(R.id.slimeGif);
