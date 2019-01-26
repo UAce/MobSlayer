@@ -1,13 +1,8 @@
 package com.yliu240.painbutton;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.app.Activity;
 import android.media.MediaPlayer;
-import android.media.PlaybackParams;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
@@ -17,9 +12,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.IOException;
-import java.io.InputStream;
 
 import pl.droidsonroids.gif.GifImageView;
 import java.util.concurrent.ThreadLocalRandom;
@@ -31,14 +23,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Start Bgm
+        //Start Bgm and Sound fx
+        final MediaPlayer damageFx = MediaPlayer.create(MainActivity.this,R.raw.slime_damage_sound);
         final MediaPlayer bgm = MediaPlayer.create(MainActivity.this,R.raw.ellinia_bgm1);
         bgm.start();
         bgm.setLooping(true);
 
+        // Sound button
         final ImageButton sound = (ImageButton) findViewById(R.id.sound);
         Boolean clicked = new Boolean(false);
-        sound.setTag(clicked); // wasn't clicked
+        sound.setTag(clicked); // Button wasn't clicked
         sound.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -77,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
                 TextView damageText = (TextView) findViewById(R.id.textView1);
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN: {
+                        if(damageFx.isPlaying()){
+                            damageFx.seekTo(0);
+                        }
+                        damageFx.start();
 
                         // Damage
                         int randomNum = ThreadLocalRandom.current().nextInt(0, 999999 + 1); // nextInt is normally exclusive of the top value, so add 1 to make it inclusive
@@ -84,8 +82,6 @@ public class MainActivity extends AppCompatActivity {
                         //Start animation
                         damageText.setText(damage);
                         damageText.setTextColor(getResources().getColor(R.color.damage));
-                        damageText.startAnimation(in);
-                        damageText.startAnimation(out);
                         gifImageView.setImageResource(R.drawable.kingslimehurt);
                         break;
                     }
