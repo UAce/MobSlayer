@@ -6,10 +6,10 @@
     <color name="white">#f8ffffff</color>
     <color name="TopColor">#777777</color>
     <color name="BottomColor">#202020</color>
-    <color name="dmgTop">#ff1a00</color>
-    <color name="dmgBottom">#ffd321</color>
-    <color name="critTop">#ff0008</color>
-    <color name="critBottom">#ef35fc</color>
+    <color name="dmgTop">#f33012</color>
+    <color name="dmgBottom">#eede30</color>
+    <color name="critTop">#d70100</color>
+    <color name="critBottom">#dd6ecc</color>
 
     <!--<color name="trans">#00FFFFFF</color>-->
 

@@ -11,11 +11,11 @@
     tools:context="com.yliu240.painbutton.MainActivity">
 
     <pl.droidsonroids.gif.GifImageView
-        android:id="@+id/slimeGif"
+        android:id="@+id/slime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:src="@drawable/kingslime_animation" />
+        android:src="@drawable/no_mob"/>
 
     <RelativeLayout
         android:id="@+id/relayout"

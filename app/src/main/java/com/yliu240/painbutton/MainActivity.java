@@ -7,7 +7,6 @@ import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.TextViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
@@ -25,25 +24,38 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import pl.droidsonroids.gif.AnimationListener;
+import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
+
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MainActivity extends AppCompatActivity {
 
     int dmgTop,dmgBottom, critTop, critBottom;
-    int bossHP = 10000000;
+    int bossHP;
+    final int totalHP = 10000000;
     String maxHP;
+    Boolean isAlive;
     int[] screenCenter = new int[2];
     ImageButton sound = null;
-    MediaPlayer damageFx, bgm;
+    MediaPlayer damageFx, spawnFx, deathFx, bgm;
     ImageView screenInFrontOfMob;
     TextView bossHP_text;
     GifImageView mob;
+    AnimationListener mob_move, mob_death, mob_appear;
+    GifDrawable mob_drawable;
     RelativeLayout RL;
     RelativeLayout.LayoutParams lp;
     Typeface comic_sans;
     final int critialDmgSize = 50;
     final int normalDmgSize = 50;
+    static int spawn_rate = 5;
+    static Timer timer;
+    int delay = 1000;
+    int period = 1000;
 
 
     @Override
@@ -53,21 +65,25 @@ public class MainActivity extends AppCompatActivity {
 
         //Start Bgm and Sound fx
         damageFx = MediaPlayer.create(MainActivity.this,R.raw.slime_damage_sound);
+        deathFx = MediaPlayer.create(MainActivity.this,R.raw.slime_death_sound);
+        spawnFx = MediaPlayer.create(MainActivity.this,R.raw.slime_spawn_sound);
         bgm = MediaPlayer.create(MainActivity.this,R.raw.ellinia_bgm1);
         bgm.start();
         bgm.setLooping(true);
 
-        // Sound button
+        // Sound button for 'Mute' & 'Sound On'
         sound = (ImageButton) findViewById(R.id.sound);
-        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
-        mob = (GifImageView) findViewById(R.id.slimeGif);
 
-        // RelativeLayout holding the damageText
+        // Creating Mob
+        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
+        mob = (GifImageView) findViewById(R.id.slime);
+        spawn_mob(5);
+
+        // RelativeLayout that will contain the damage Text
         RL = (RelativeLayout) findViewById(R.id.relayout);
         lp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-
 
         //Colors For damageText
         dmgTop=ContextCompat.getColor(MainActivity.this, R.color.dmgTop);
@@ -80,18 +96,20 @@ public class MainActivity extends AppCompatActivity {
         screenCenter[1]=this.getResources().getDisplayMetrics().heightPixels;
         screenCenter[1]-=this.getResources().getDisplayMetrics().heightPixels/2;
 
+        // Set Boss HP
+        bossHP=totalHP;
         maxHP = String.valueOf(bossHP);
         bossHP_text = (TextView) findViewById(R.id.hp);
         bossHP_text.setTypeface(comic_sans);
         bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
     }
 
+
     @Override
     protected void onStart() {
         super.onStart();
 
-        bgmSoundListen(); //Listens to sound Button if pressed
-
+        startBgmListener(); //Listens to sound Button if pressed
         screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch (View v, MotionEvent event){
@@ -111,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
                         int damageTaken=0;
                         int x = (int) event.getRawX();
                         int y = (int) event.getRawY();
+
                         //TODO: Make this relative to mob position
                         if (screenCenter[0]+100>x && screenCenter[0]-300<x && screenCenter[1]-50<y && screenCenter[1]+350>y){
                             damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
@@ -118,25 +137,78 @@ public class MainActivity extends AppCompatActivity {
                         createDamageText(damageTaken, x, y);
                         decreaseHP(damageTaken);
                         mob.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-                        mob.setImageResource(R.drawable.kingslimehurt);
+                        mob.setImageResource(R.drawable.slime_hurt);
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
                         if (bossHP == 0){
-                            //TODO: Add animation for death
-                            break;
+                            mob_death();
+                            isAlive = false;
+                        }else{
+                            mob.setImageResource(R.drawable.slime_move);
                         }
-                        mob.setImageResource(R.drawable.kingslime_animation);
                         break;
                     }
                 }
-                return true;
+                return isAlive;
             }
         });
     }
 
-    public void bgmSoundListen(){
+    private void mob_death() {
+        deathFx.start();
+        mob.setImageResource(R.drawable.slime_death);
+        mob_drawable = (GifDrawable) mob.getDrawable();
+        mob_drawable.setLoopCount(1);
+        mob_death = new AnimationListener() {
+            @Override
+            public void onAnimationCompleted(int loopNumber) {
+                mob.setImageResource(R.drawable.no_mob);
+                mob_drawable.setLoopCount(0);
+            }
+        };
+        mob_drawable.addAnimationListener(mob_death);
+        Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
+        spawn_mob(5);
+    }
+
+    private void spawn_mob(int rate) {
+        spawn_rate=rate;
+        timer = new Timer();
+        Toast.makeText(MainActivity.this, "Spawning Mob...", Toast.LENGTH_LONG).show();
+        timer.scheduleAtFixedRate(new TimerTask() {
+
+            public void run() {
+                if (spawn_rate == 1) {
+                    mob_start();
+                    timer.cancel();
+                }else {
+                    --spawn_rate;
+                }
+            }
+        }, delay, period);
+    }
+
+    private void mob_start(){
+            spawnFx.start();
+            mob.setImageResource(R.drawable.slime_spawn);
+            mob_drawable = (GifDrawable) mob.getDrawable();
+            mob_drawable.setLoopCount(1);
+            mob_move = new AnimationListener() {
+                @Override
+                public void onAnimationCompleted(int loopNumber) {
+                    mob.setImageResource(R.drawable.slime_move);
+                    mob_drawable.setLoopCount(0);
+                }
+            };
+            mob_drawable.addAnimationListener(mob_move);
+
+            bossHP=totalHP;
+            isAlive=true;
+    }
+
+    public void startBgmListener(){
         Boolean clicked = new Boolean(false);
         sound.setTag(clicked); // Button wasn't clicked
         sound.setOnClickListener(new View.OnClickListener() {
