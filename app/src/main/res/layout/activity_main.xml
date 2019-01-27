@@ -4,9 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:screenOrientation="portrait"
     android:layout_alignParentTop="true"
     android:layout_centerHorizontal="true"
-    android:background="@color/white"
+    android:background="@drawable/gradient"
     tools:context="com.yliu240.painbutton.MainActivity">
 
     <pl.droidsonroids.gif.GifImageView
@@ -18,18 +19,10 @@
         tools:layout_editor_absoluteY="8dp" />
 
     <RelativeLayout
-        android:id="@+id/rl_elephant"
+        android:id="@+id/relayout"
         android:layout_width="match_parent"
-        android:layout_height="431dp"
+        android:layout_height="match_parent"
         android:layout_gravity="center">
-
-        <TextView
-            android:id="@+id/textView1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:text="999999"
-            android:textColor="@color/damage" />
 
     </RelativeLayout>
 
@@ -37,6 +30,7 @@
         android:id="@+id/transparent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="bottom"
         android:background="@drawable/transparent" />
 
     <ImageButton
