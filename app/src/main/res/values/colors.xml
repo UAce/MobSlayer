@@ -6,8 +6,11 @@
     <color name="white">#FFFFFF</color>
     <color name="TopColor">#777777</color>
     <color name="BottomColor">#202020</color>
-    <color name="TopText">#ff6600</color>
-    <color name="BottomText">#ffe100</color>
+    <color name="dmgTop">#ff1a00</color>
+    <color name="dmgBottom">#ffd321</color>
+    <color name="critTop">#ff0008</color>
+    <color name="critBottom">#ef35fc</color>
+
     <!--<color name="trans">#00FFFFFF</color>-->
 
 </resources>
