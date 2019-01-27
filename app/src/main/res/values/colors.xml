@@ -3,7 +3,7 @@
     <color name="colorPrimary">#d10000</color>
     <color name="colorPrimaryDark">#bc000000</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="white">#FFFFFF</color>
+    <color name="white">#f8ffffff</color>
     <color name="TopColor">#777777</color>
     <color name="BottomColor">#202020</color>
     <color name="dmgTop">#ff1a00</color>

@@ -22,6 +22,24 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center">
+        <TextView
+            android:id="@+id/hp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="50dp"
+            android:textAppearance="@style/BossHP_style"
+            android:visibility="invisible"/>
+
+        <ProgressBar
+            android:id="@+id/hp_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/hp"
+            android:visibility="invisible"
+            android:layout_centerHorizontal="true"
+            />
     </RelativeLayout>
 
     <ImageView

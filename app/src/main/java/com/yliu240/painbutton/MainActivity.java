@@ -1,17 +1,16 @@
 package com.yliu240.painbutton;
 
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.TextViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.BoringLayout;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
@@ -32,18 +31,18 @@ import java.util.concurrent.ThreadLocalRandom;
 public class MainActivity extends AppCompatActivity {
 
     int dmgTop,dmgBottom, critTop, critBottom;
+    int bossHP = 10000000;
+    String maxHP;
     int[] screenCenter = new int[2];
     ImageButton sound = null;
     MediaPlayer damageFx, bgm;
     ImageView screenInFrontOfMob;
+    TextView bossHP_text;
     GifImageView mob;
     RelativeLayout RL;
     RelativeLayout.LayoutParams lp;
-//    Animation fadeIn, fadeOut;
-//    AnimationSet animationSet;
-    Shader textShader, critShader;
     Typeface comic_sans;
-    final int critialDmgSize = 55;
+    final int critialDmgSize = 50;
     final int normalDmgSize = 50;
 
 
@@ -80,6 +79,11 @@ public class MainActivity extends AppCompatActivity {
         screenCenter[0]-=this.getResources().getDisplayMetrics().widthPixels/2;
         screenCenter[1]=this.getResources().getDisplayMetrics().heightPixels;
         screenCenter[1]-=this.getResources().getDisplayMetrics().heightPixels/2;
+
+        maxHP = String.valueOf(bossHP);
+        bossHP_text = (TextView) findViewById(R.id.hp);
+        bossHP_text.setTypeface(comic_sans);
+        bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
     }
 
     @Override
@@ -95,6 +99,9 @@ public class MainActivity extends AppCompatActivity {
 
                     // Pressed
                     case MotionEvent.ACTION_DOWN: {
+                        if (bossHP == 0){
+                            break;
+                        }
                         if(damageFx.isPlaying()){
                             damageFx.seekTo(0);
                         }
@@ -109,12 +116,17 @@ public class MainActivity extends AppCompatActivity {
                             damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                         }
                         createDamageText(damageTaken, x, y);
-
+                        decreaseHP(damageTaken);
+                        mob.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                         mob.setImageResource(R.drawable.kingslimehurt);
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
+                        if (bossHP == 0){
+                            //TODO: Add animation for death
+                            break;
+                        }
                         mob.setImageResource(R.drawable.kingslime_animation);
                         break;
                     }
@@ -130,17 +142,27 @@ public class MainActivity extends AppCompatActivity {
         sound.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String msg;
                 if( ((Boolean)sound.getTag())==false ){
                     sound.setImageResource(R.drawable.baseline_volume_off_24);
                     bgm.pause();
-                    Toast.makeText(MainActivity.this, "Mute", Toast.LENGTH_SHORT).show();
+                    msg="Mute";
                     sound.setTag(new Boolean(true));
                 }else{
                     sound.setImageResource(R.drawable.baseline_volume_up_24);
                     bgm.start();
-                    Toast.makeText(MainActivity.this, "Sound On", Toast.LENGTH_SHORT).show();
+                    msg="Sound On";
                     sound.setTag(new Boolean(false));
                 }
+                final Toast toast = Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT);
+                toast.show();
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast.cancel();
+                    }
+                }, 1000);
             }
         });
     }
@@ -148,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Create Damage Text and sets the font, size, text, position
     public void createDamageText(int damageTaken, float x, float y){
-        int slideHeight = ThreadLocalRandom.current().nextInt(200, 400 + 1);
+        int slideHeight = ThreadLocalRandom.current().nextInt(200, 350 + 1);
         int slideWidth = ThreadLocalRandom.current().nextInt(-20, 20 + 1);
         String damage = Integer.toString(damageTaken);
 
@@ -210,8 +232,8 @@ public class MainActivity extends AppCompatActivity {
         }
         damageText.setText(damage);
         // Position damageText to Click position
-        damageText.setX(x-200);
-        damageText.setY(y-150);
+        damageText.setX(screenCenter[0]-300);
+        damageText.setY(screenCenter[1]);
         damageText.setVisibility(View.VISIBLE);
         damageText.startAnimation(animationSet);
     }
@@ -235,6 +257,34 @@ public class MainActivity extends AppCompatActivity {
         animationSet.addAnimation(moveUp);
 
         return animationSet;
+    }
+
+    public void decreaseHP(int damageTaken){
+        if (bossHP-damageTaken>0) {
+            bossHP -= damageTaken;
+        }else{
+            bossHP = 0;
+        }
+        bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
+        bossHP_text.setVisibility(View.VISIBLE);
+        Animation fadeOut = new AlphaAnimation(1, 0);
+        fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
+        fadeOut.setDuration(4000);
+        fadeOut.setAnimationListener(new TranslateAnimation.AnimationListener() {
+
+            @Override
+            public void onAnimationStart(Animation animation) { }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) { }
+
+            @Override
+            public void onAnimationEnd(Animation animation)
+            {
+                bossHP_text.setVisibility(View.INVISIBLE);
+            }
+        });
+        bossHP_text.startAnimation(fadeOut);
     }
 }
 
