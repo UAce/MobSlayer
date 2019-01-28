@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     int dmgTop,dmgBottom, critTop, critBottom;
     int bossHP;
-    final int totalHP = 10000000;
+    final int totalHP = 100000000;
     String maxHP;
     Boolean isAlive;
     int[] screenCenter = new int[2];
@@ -167,27 +167,35 @@ public class MainActivity extends AppCompatActivity {
                 mob.setImageResource(R.drawable.no_mob);
                 mob_drawable.setLoopCount(0);
             }
+
         };
         mob_drawable.addAnimationListener(mob_death);
         Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
         spawn_mob(5);
     }
 
-    private void spawn_mob(int rate) {
-        spawn_rate=rate;
-        timer = new Timer();
-        Toast.makeText(MainActivity.this, "Spawning Mob...", Toast.LENGTH_LONG).show();
-        timer.scheduleAtFixedRate(new TimerTask() {
 
+    private void spawn_mob(int rate) {
+        new Timer().schedule(new TimerTask() {
+            @Override
             public void run() {
-                if (spawn_rate == 1) {
-                    mob_start();
-                    timer.cancel();
-                }else {
-                    --spawn_rate;
-                }
+                //Nothing
             }
-        }, delay, period);
+        }, 2000);
+        Toast.makeText(MainActivity.this, "Spawning Mob...", Toast.LENGTH_LONG).show();
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                MainActivity.this.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        mob_start();
+
+                    }
+                });
+            }
+        }, 5000);
     }
 
     private void mob_start(){
