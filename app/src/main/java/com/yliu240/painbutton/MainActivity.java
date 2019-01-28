@@ -32,6 +32,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.yliu240.painbutton.R.drawable.no_mob;
+import static com.yliu240.painbutton.R.drawable.slime_death;
+import static com.yliu240.painbutton.R.drawable.slime_move;
+import static com.yliu240.painbutton.R.drawable.slime_spawn;
+
 public class MainActivity extends AppCompatActivity {
 
     int dmgTop,dmgBottom, critTop, critBottom;
@@ -143,10 +148,17 @@ public class MainActivity extends AppCompatActivity {
                     // Released
                     case MotionEvent.ACTION_UP: {
                         if (bossHP == 0){
-                            mob_death();
+                            MainActivity.this.runOnUiThread(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    mob_death();
+
+                                }
+                            });
                             isAlive = false;
                         }else{
-                            mob.setImageResource(R.drawable.slime_move);
+                            mob.setImageResource(slime_move);
                         }
                         break;
                     }
@@ -158,13 +170,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void mob_death() {
         deathFx.start();
-        mob.setImageResource(R.drawable.slime_death);
+        mob.setImageResource(slime_death);
         mob_drawable = (GifDrawable) mob.getDrawable();
         mob_drawable.setLoopCount(1);
         mob_death = new AnimationListener() {
             @Override
             public void onAnimationCompleted(int loopNumber) {
-                mob.setImageResource(R.drawable.no_mob);
+                mob.setImageResource(no_mob);
                 mob_drawable.setLoopCount(0);
             }
 
@@ -200,13 +212,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void mob_start(){
             spawnFx.start();
-            mob.setImageResource(R.drawable.slime_spawn);
+            mob.setImageResource(slime_spawn);
             mob_drawable = (GifDrawable) mob.getDrawable();
             mob_drawable.setLoopCount(1);
             mob_move = new AnimationListener() {
                 @Override
                 public void onAnimationCompleted(int loopNumber) {
-                    mob.setImageResource(R.drawable.slime_move);
+                    mob.setImageResource(slime_move);
                     mob_drawable.setLoopCount(0);
                 }
             };
