@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.yliu240.painbutton.R.drawable.no_mob;
 import static com.yliu240.painbutton.R.drawable.slime_death;
+import static com.yliu240.painbutton.R.drawable.slime_hurt;
 import static com.yliu240.painbutton.R.drawable.slime_move;
 import static com.yliu240.painbutton.R.drawable.slime_spawn;
 
@@ -50,17 +51,13 @@ public class MainActivity extends AppCompatActivity {
     ImageView screenInFrontOfMob;
     TextView bossHP_text;
     GifImageView mob;
-    AnimationListener mob_move, mob_death, mob_appear;
     GifDrawable mob_drawable;
+    AnimationListener mob_death, mob_move;
     RelativeLayout RL;
     RelativeLayout.LayoutParams lp;
     Typeface comic_sans;
     final int critialDmgSize = 50;
     final int normalDmgSize = 50;
-    static int spawn_rate = 5;
-    static Timer timer;
-    int delay = 1000;
-    int period = 1000;
 
 
     @Override
@@ -103,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Boss HP
         bossHP=totalHP;
-        maxHP = String.valueOf(bossHP);
+        maxHP = String.valueOf(totalHP);
         bossHP_text = (TextView) findViewById(R.id.hp);
         bossHP_text.setTypeface(comic_sans);
         bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
@@ -114,7 +111,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        startBgmListener(); //Listens to sound Button if pressed
+        //Listens to sound Button if pressed
+        startBgmListener();
+    }
+
+    private void startAttackListener() {
         screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch (View v, MotionEvent event){
@@ -140,26 +141,16 @@ public class MainActivity extends AppCompatActivity {
                             damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                         }
                         createDamageText(damageTaken, x, y);
+                        mob.setImageResource(slime_hurt);
                         decreaseHP(damageTaken);
-                        mob.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-                        mob.setImageResource(R.drawable.slime_hurt);
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
                         if (bossHP == 0){
-                            MainActivity.this.runOnUiThread(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    mob_death();
-
-                                }
-                            });
-                            isAlive = false;
-                        }else{
-                            mob.setImageResource(slime_move);
+                            break;
                         }
+                        mob.setImageResource(slime_move);
                         break;
                     }
                 }
@@ -177,10 +168,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationCompleted(int loopNumber) {
                 mob.setImageResource(no_mob);
-                mob_drawable.setLoopCount(0);
             }
 
         };
+        mob_drawable.removeAnimationListener(mob_move);
         mob_drawable.addAnimationListener(mob_death);
         Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
         spawn_mob(5);
@@ -219,13 +210,15 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onAnimationCompleted(int loopNumber) {
                     mob.setImageResource(slime_move);
-                    mob_drawable.setLoopCount(0);
                 }
             };
+            mob_drawable.removeAnimationListener(mob_death);
             mob_drawable.addAnimationListener(mob_move);
 
             bossHP=totalHP;
-            isAlive=true;
+            isAlive=true;//Listens to screen being pressed
+            startAttackListener();
+
     }
 
     public void startBgmListener(){
@@ -356,6 +349,15 @@ public class MainActivity extends AppCompatActivity {
             bossHP -= damageTaken;
         }else{
             bossHP = 0;
+            screenInFrontOfMob.setOnTouchListener(null);
+            isAlive = false;
+            MainActivity.this.runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    mob_death();
+                }
+            });
         }
         bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
         bossHP_text.setVisibility(View.VISIBLE);
