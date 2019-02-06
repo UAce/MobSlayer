@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         mob.setLayoutParams(FL_lp);
         mob.setImageResource(R.drawable.no_mob);
         FL.addView(mob,0);
-        spawn_mob(5);
+        spawn_mob();
 
         //Colors For damageText
         dmgTop=ContextCompat.getColor(MainActivity.this, R.color.dmgTop);
@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause()
     {
         super.onPause();
+        bgm.pause();
         System.gc();
     }
 
@@ -128,6 +129,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy(){
         super.onDestroy();
         System.gc();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        bgm.start();
     }
 
     @Override
@@ -210,18 +217,13 @@ public class MainActivity extends AppCompatActivity {
         mob_drawable.removeAnimationListener(mob_move);
         mob_drawable.addAnimationListener(mob_death);
         Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
-        spawn_mob(5);
+        spawn_mob();
     }
 
 
-    private void spawn_mob(int rate) {
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                //Nothing
-            }
-        }, 2000);
-        Toast.makeText(MainActivity.this, "Spawning Mob...", Toast.LENGTH_LONG).show();
+    private void spawn_mob() {
+        int spawnTime = ThreadLocalRandom.current().nextInt(5000, 15000+1);
+
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -230,18 +232,18 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void run() {
+                        Toast.makeText(MainActivity.this, "A wild Slime has appeared!", Toast.LENGTH_SHORT).show();
                         mob_start();
 
                     }
                 });
             }
-        }, 5000);
+        }, spawnTime);
     }
 
     private void mob_start(){
             spawnFx.start();
             mob.setImageResource(slime_spawn);
-//            FL.addView(mob);
             mob_drawable = (GifDrawable) mob.getDrawable();
             mob_drawable.setLoopCount(1);
             mob_move = new AnimationListener() {
@@ -294,8 +296,6 @@ public class MainActivity extends AppCompatActivity {
 
     // Create Damage Text and sets the font, size, text, position
     public void createDamageText(int damageTaken, float x, float y){
-        int slideHeight = ThreadLocalRandom.current().nextInt(200, 350 + 1);
-        int slideWidth = ThreadLocalRandom.current().nextInt(-20, 20 + 1);
         String damage = Integer.toString(damageTaken);
         final WeakReference<TextView> damageText = new WeakReference<TextView>(new TextView(getApplicationContext()));
         damageText.get().setLayoutParams(RL_lp);
@@ -350,9 +350,9 @@ public class MainActivity extends AppCompatActivity {
         }
         bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
         int hp = toPercentage(bossHP,totalHP);
-        if(hp >= 60){
+        if(hp >= 66){
             HpBar.getProgressDrawable().setColorFilter(0xff00ff00,android.graphics.PorterDuff.Mode.MULTIPLY);
-        }else if(hp < 60 && hp >= 30){
+        }else if(hp < 66 && hp >= 33){
             HpBar.getProgressDrawable().setColorFilter(0xffffff00,android.graphics.PorterDuff.Mode.MULTIPLY);
         }else{
             HpBar.getProgressDrawable().setColorFilter(0xFFFF0000,android.graphics.PorterDuff.Mode.MULTIPLY);
