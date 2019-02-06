@@ -1,5 +1,6 @@
 package com.yliu240.painbutton;
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
@@ -9,17 +10,18 @@ import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.HapticFeedbackConstants;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.util.Log;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.TranslateAnimation;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +30,7 @@ import pl.droidsonroids.gif.AnimationListener;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
+import java.lang.ref.WeakReference;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,12 +43,11 @@ import static com.yliu240.painbutton.R.drawable.slime_spawn;
 
 public class MainActivity extends AppCompatActivity {
 
-    int dmgTop,dmgBottom, critTop, critBottom;
+    int dmgTop, dmgBottom, critTop, critBottom;
     int bossHP;
-    final int totalHP = 100000000;
-    String maxHP;
+    int totalHP = 100000000;
+    ProgressBar HpBar;
     Boolean isAlive;
-    int[] screenCenter = new int[2];
     ImageButton sound = null;
     MediaPlayer damageFx, spawnFx, deathFx, bgm;
     ImageView screenInFrontOfMob;
@@ -53,11 +55,14 @@ public class MainActivity extends AppCompatActivity {
     GifImageView mob;
     GifDrawable mob_drawable;
     AnimationListener mob_death, mob_move;
+    FrameLayout FL;
+    FrameLayout.LayoutParams FL_lp;
     RelativeLayout RL;
-    RelativeLayout.LayoutParams lp;
+    RelativeLayout.LayoutParams RL_lp;
     Typeface comic_sans;
-    final int critialDmgSize = 50;
-    final int normalDmgSize = 50;
+    int critialDmgSize = 50;
+    int normalDmgSize = 50;
+    private static final String TAG = "DEBUG: ";
 
 
     @Override
@@ -76,16 +81,24 @@ public class MainActivity extends AppCompatActivity {
         // Sound button for 'Mute' & 'Sound On'
         sound = (ImageButton) findViewById(R.id.sound);
 
-        // Creating Mob
-        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
-        mob = (GifImageView) findViewById(R.id.slime);
-        spawn_mob(5);
-
-        // RelativeLayout that will contain the damage Text
+        // Get Layouts
+        FL = (FrameLayout) findViewById(R.id.framelayout);
+        FL_lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
+                FrameLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
+        FL_lp.gravity = Gravity.CENTER;
         RL = (RelativeLayout) findViewById(R.id.relayout);
-        lp = new RelativeLayout.LayoutParams(
+        RL_lp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
+
+        // Creating Mob
+        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
+        mob = new GifImageView(getApplicationContext());
+        mob.setLayoutParams(FL_lp);
+        mob.setImageResource(R.drawable.no_mob);
+        FL.addView(mob,0);
+        spawn_mob(5);
 
         //Colors For damageText
         dmgTop=ContextCompat.getColor(MainActivity.this, R.color.dmgTop);
@@ -93,19 +106,29 @@ public class MainActivity extends AppCompatActivity {
         critTop=ContextCompat.getColor(MainActivity.this, R.color.critTop);
         critBottom=ContextCompat.getColor(MainActivity.this, R.color.critBottom);
         comic_sans = Typeface.createFromAsset(getAssets(),"comic-sans-ms-bold.ttf");
-        screenCenter[0]=this.getResources().getDisplayMetrics().widthPixels;
-        screenCenter[0]-=this.getResources().getDisplayMetrics().widthPixels/2;
-        screenCenter[1]=this.getResources().getDisplayMetrics().heightPixels;
-        screenCenter[1]-=this.getResources().getDisplayMetrics().heightPixels/2;
 
-        // Set Boss HP
+        // Set Other Variables
+        HpBar = (ProgressBar)findViewById(R.id.HpBar);
+        HpBar.setMax(100);
+        HpBar.setProgress(100);
         bossHP=totalHP;
-        maxHP = String.valueOf(totalHP);
         bossHP_text = (TextView) findViewById(R.id.hp);
         bossHP_text.setTypeface(comic_sans);
-        bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
+        bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
     }
 
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        System.gc();
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        System.gc();
+    }
 
     @Override
     protected void onStart() {
@@ -115,7 +138,17 @@ public class MainActivity extends AppCompatActivity {
         startBgmListener();
     }
 
+    // Useful method for another time
+//    public static void sendViewToBack(final View child) {
+//        final ViewGroup parent = (ViewGroup)child.getParent();
+//        if (null != parent) {
+//            parent.removeView(child);
+//            parent.addView(child, 0);
+//        }
+//    }
+
     private void startAttackListener() {
+
         screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch (View v, MotionEvent event){
@@ -133,15 +166,16 @@ public class MainActivity extends AppCompatActivity {
 
                         // Generate random Damage and create damage Text
                         int damageTaken=0;
-                        int x = (int) event.getRawX();
-                        int y = (int) event.getRawY();
+                        int x = (int) event.getRawX()+140; //Hardcoded adjustment for mob position
+                        int y = (int) event.getRawY()-180;
 
-                        //TODO: Make this relative to mob position
-                        if (screenCenter[0]+100>x && screenCenter[0]-300<x && screenCenter[1]-50<y && screenCenter[1]+350>y){
+                        if (inRange(x,y)){
                             damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                         }
                         createDamageText(damageTaken, x, y);
+                        FL.removeView(mob);
                         mob.setImageResource(slime_hurt);
+                        FL.addView(mob,0);
                         decreaseHP(damageTaken);
                         break;
                     }
@@ -150,7 +184,9 @@ public class MainActivity extends AppCompatActivity {
                         if (bossHP == 0){
                             break;
                         }
+                        FL.removeView(mob);
                         mob.setImageResource(slime_move);
+                        FL.addView(mob,0);
                         break;
                     }
                 }
@@ -189,7 +225,8 @@ public class MainActivity extends AppCompatActivity {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                MainActivity.this.runOnUiThread(new Runnable() {
+                Activity lB = MainActivity.this;
+                lB.runOnUiThread(new Runnable() {
 
                     @Override
                     public void run() {
@@ -204,12 +241,14 @@ public class MainActivity extends AppCompatActivity {
     private void mob_start(){
             spawnFx.start();
             mob.setImageResource(slime_spawn);
+//            FL.addView(mob);
             mob_drawable = (GifDrawable) mob.getDrawable();
             mob_drawable.setLoopCount(1);
             mob_move = new AnimationListener() {
                 @Override
                 public void onAnimationCompleted(int loopNumber) {
                     mob.setImageResource(slime_move);
+
                 }
             };
             mob_drawable.removeAnimationListener(mob_death);
@@ -258,90 +297,39 @@ public class MainActivity extends AppCompatActivity {
         int slideHeight = ThreadLocalRandom.current().nextInt(200, 350 + 1);
         int slideWidth = ThreadLocalRandom.current().nextInt(-20, 20 + 1);
         String damage = Integer.toString(damageTaken);
+        final WeakReference<TextView> damageText = new WeakReference<TextView>(new TextView(getApplicationContext()));
+        damageText.get().setLayoutParams(RL_lp);
+        damageText.get().setSingleLine();
+        RL.addView(damageText.get());
 
-        final TextView damageText = new TextView(getApplicationContext());
-        damageText.setLayoutParams(lp);
-        damageText.setSingleLine();
-        RL.addView(damageText);
-
-        // fadeIn/Out Animations
-        Animation fadeIn = new AlphaAnimation(0, 1);
-        fadeIn.setInterpolator(new DecelerateInterpolator()); //add this
-        fadeIn.setDuration(10);
-
-        Animation fadeOut = new AlphaAnimation(1, 0);
-        fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
-        fadeOut.setStartOffset(175);
-        fadeOut.setDuration(350);
-
-        TranslateAnimation moveUp = new TranslateAnimation(0, slideWidth, 0, -slideHeight);
-        moveUp.setDuration(150);
-
-
-        AnimationSet animationSet = new AnimationSet(true);
-        animationSet.addAnimation(fadeIn);
-        animationSet.addAnimation(moveUp);
-
-        fadeOut.setAnimationListener(new TranslateAnimation.AnimationListener() {
-
-            @Override
-            public void onAnimationStart(Animation animation) { }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) { }
-
-            @Override
-            public void onAnimationEnd(Animation animation)
-            {
-                damageText.setVisibility(View.GONE);
-            }
-        });
-        animationSet.addAnimation(fadeOut);
-
-        damageText.setTypeface(comic_sans);
-        damageText.setTextSize(normalDmgSize);
-        Shader textShader=new LinearGradient(0, 0, 0, damageText.getPaint().getTextSize(),
+        damageText.get().setTypeface(comic_sans);
+        damageText.get().setTextSize(normalDmgSize);
+        Shader textShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
                 new int[]{dmgTop,dmgBottom},
                 new float[]{0, 1}, Shader.TileMode.CLAMP);
-        damageText.setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
+        damageText.get().setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
 
-        damageText.getPaint().setShader(textShader);
+        damageText.get().getPaint().setShader(textShader);
         if(damageTaken>=900000){
-            damageText.setTextSize(critialDmgSize);
-            Shader critShader=new LinearGradient(0, 0, 0, damageText.getPaint().getTextSize(),
+            damageText.get().setTextSize(critialDmgSize);
+            Shader critShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
                     new int[]{critTop, critBottom},
                     new float[]{0, 1}, Shader.TileMode.CLAMP);
-            damageText.getPaint().setShader(critShader);
+            damageText.get().getPaint().setShader(critShader);
         }else if (damageTaken<500000){
             damage = " MISS ";
         }
-        damageText.setText(damage);
+        damageText.get().setText(damage);
+
         // Position damageText to Click position
-        damageText.setX(screenCenter[0]-300);
-        damageText.setY(screenCenter[1]);
-        damageText.setVisibility(View.VISIBLE);
-        damageText.startAnimation(animationSet);
-    }
-
-
-    // Create AnimationSet for Damage text, returns animationSet
-    public AnimationSet createDamageTextAnimation(){
-        // fade Out Animations
-        Animation fadeOut = new AlphaAnimation(1, 0);
-        fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
-        fadeOut.setStartOffset(150);
-        fadeOut.setDuration(400);
-
-        int slideHeight = ThreadLocalRandom.current().nextInt(100, 200 + 1);
-        int slideWidth = ThreadLocalRandom.current().nextInt(-5, 5 + 1);
-        TranslateAnimation moveUp = new TranslateAnimation(0, slideWidth, 0, -slideHeight);
-        moveUp.setDuration(150);
-        moveUp.setStartOffset(50);
-
-        AnimationSet animationSet = new AnimationSet(true);
-        animationSet.addAnimation(moveUp);
-
-        return animationSet;
+        damageText.get().setX(FL.getWidth()/2-300);
+        damageText.get().setY(FL.getHeight()/2);
+        damageText.get().animate().translationYBy(-300).alpha(0.15f).setDuration(1000).withEndAction(new Runnable(){
+            public void run(){
+                // rRemove the view from the parent layout
+                RL.removeView(damageText.get());
+            }
+        });;
     }
 
     public void decreaseHP(int damageTaken){
@@ -351,7 +339,8 @@ public class MainActivity extends AppCompatActivity {
             bossHP = 0;
             screenInFrontOfMob.setOnTouchListener(null);
             isAlive = false;
-            MainActivity.this.runOnUiThread(new Runnable() {
+            Activity lC = MainActivity.this;
+            lC.runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
@@ -359,7 +348,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-        bossHP_text.setText(String.valueOf(bossHP)+"/"+maxHP);
+        bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
+        int hp = toPercentage(bossHP,totalHP);
+        if(hp >= 60){
+            HpBar.getProgressDrawable().setColorFilter(0xff00ff00,android.graphics.PorterDuff.Mode.MULTIPLY);
+        }else if(hp < 60 && hp >= 30){
+            HpBar.getProgressDrawable().setColorFilter(0xffffff00,android.graphics.PorterDuff.Mode.MULTIPLY);
+        }else{
+            HpBar.getProgressDrawable().setColorFilter(0xFFFF0000,android.graphics.PorterDuff.Mode.MULTIPLY);
+        }
+
+        HpBar.setProgress(hp);
+        HpBar.setVisibility(View.VISIBLE);
         bossHP_text.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
@@ -376,9 +376,20 @@ public class MainActivity extends AppCompatActivity {
             public void onAnimationEnd(Animation animation)
             {
                 bossHP_text.setVisibility(View.INVISIBLE);
+                HpBar.setVisibility(View.INVISIBLE);
             }
         });
         bossHP_text.startAnimation(fadeOut);
+        HpBar.startAnimation(fadeOut);
+    }
+
+    public int toPercentage(int val, int total){
+        return (int)(((float)val/(float)total)*100);
+    }
+
+    public Boolean inRange(int x, int y){
+        return (x>(FL.getWidth()/2)-(mob.getWidth()/3) && x<(FL.getWidth()/2)+(mob.getWidth()/3))
+                && (y>(FL.getHeight()/2)-(mob.getHeight()/3) && y<(FL.getHeight()/2)+(mob.getHeight()/3));
     }
 }
 

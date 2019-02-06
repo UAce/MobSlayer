@@ -7,14 +7,8 @@
     android:layout_alignParentTop="true"
     android:layout_centerHorizontal="true"
     android:background="@drawable/gradient"
-    tools:context="com.yliu240.painbutton.MainActivity">
-
-    <pl.droidsonroids.gif.GifImageView
-        android:id="@+id/slime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:src="@drawable/no_mob"/>
+    tools:context="com.yliu240.painbutton.MainActivity"
+    android:id="@+id/framelayout">
 
     <RelativeLayout
         android:id="@+id/relayout"
@@ -31,9 +25,9 @@
             android:visibility="invisible"/>
 
         <ProgressBar
-            android:id="@+id/hp_bar"
+            android:id="@+id/HpBar"
             style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_below="@+id/hp"
             android:visibility="invisible"
