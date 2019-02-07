@@ -34,4 +34,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'pl.droidsonroids.gif:android-gif-drawable:1.2.+'
     compile 'com.google.code.gson:gson:2.8.5'
+    compile 'org.javatuples:javatuples:1.2'
 }

@@ -5,11 +5,14 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -25,6 +28,8 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.javatuples.Pair;
 
 import pl.droidsonroids.gif.AnimationListener;
 import pl.droidsonroids.gif.GifDrawable;
@@ -49,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar HpBar;
     Boolean isAlive;
     ImageButton sound = null;
-    MediaPlayer damageFx, spawnFx, deathFx, bgm;
+    MediaPlayer bgm;
+    Pair<SoundPool, Integer> dmgFx, spawnFx, deathFx;
     ImageView screenInFrontOfMob;
     TextView bossHP_text;
     GifImageView mob;
@@ -60,8 +66,7 @@ public class MainActivity extends AppCompatActivity {
     RelativeLayout RL;
     RelativeLayout.LayoutParams RL_lp;
     Typeface comic_sans;
-    int critialDmgSize = 50;
-    int normalDmgSize = 50;
+    int dmgSize = 50;
     private static final String TAG = "DEBUG: ";
 
 
@@ -70,10 +75,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Start Bgm and Sound fx
-        damageFx = MediaPlayer.create(MainActivity.this,R.raw.slime_damage_sound);
-        deathFx = MediaPlayer.create(MainActivity.this,R.raw.slime_death_sound);
-        spawnFx = MediaPlayer.create(MainActivity.this,R.raw.slime_spawn_sound);
+        //Load and Start Bgm/Sound Fx
+        dmgFx = loadSfx(R.raw.slime_damage_sound);
+        deathFx = loadSfx(R.raw.slime_death_sound);
+        spawnFx = loadSfx(R.raw.slime_spawn_sound);
         bgm = MediaPlayer.create(MainActivity.this,R.raw.ellinia_bgm1);
         bgm.start();
         bgm.setLooping(true);
@@ -117,25 +122,6 @@ public class MainActivity extends AppCompatActivity {
         bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
     }
 
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-        bgm.pause();
-        System.gc();
-    }
-
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-        System.gc();
-    }
-
-    @Override
-    protected void onResume(){
-        super.onResume();
-        bgm.start();
-    }
 
     @Override
     protected void onStart() {
@@ -144,6 +130,31 @@ public class MainActivity extends AppCompatActivity {
         //Listens to sound Button if pressed
         startBgmListener();
     }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+        bgm.pause();
+        sound.setOnClickListener(null);
+        System.gc();
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        bgm.stop();
+        sound.setOnClickListener(null);
+        System.gc();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        startBgmListener();
+        bgm.start();
+    }
+
 
     // Useful method for another time
 //    public static void sendViewToBack(final View child) {
@@ -154,115 +165,30 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //    }
 
-    private void startAttackListener() {
 
-        screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch (View v, MotionEvent event){
-                switch (event.getAction()) {
-
-                    // Pressed
-                    case MotionEvent.ACTION_DOWN: {
-                        if (bossHP == 0){
-                            break;
-                        }
-                        if(damageFx.isPlaying()){
-                            damageFx.seekTo(0);
-                        }
-                        damageFx.start();
-
-                        // Generate random Damage and create damage Text
-                        int damageTaken=0;
-                        int x = (int) event.getRawX()+140; //Hardcoded adjustment for mob position
-                        int y = (int) event.getRawY()-180;
-
-                        if (inRange(x,y)){
-                            damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
-                        }
-                        createDamageText(damageTaken, x, y);
-                        FL.removeView(mob);
-                        mob.setImageResource(slime_hurt);
-                        FL.addView(mob,0);
-                        decreaseHP(damageTaken);
-                        break;
-                    }
-                    // Released
-                    case MotionEvent.ACTION_UP: {
-                        if (bossHP == 0){
-                            break;
-                        }
-                        FL.removeView(mob);
-                        mob.setImageResource(slime_move);
-                        FL.addView(mob,0);
-                        break;
-                    }
-                }
-                return isAlive;
-            }
-        });
+    /*
+     * Sound functions
+     */
+    private void playSfx(Pair<SoundPool, Integer> sfx){
+        sfx.getValue0().play(sfx.getValue1(), 1.0F, 1.0F, 0, 0, 1.0F);
     }
 
-    private void mob_death() {
-        deathFx.start();
-        mob.setImageResource(slime_death);
-        mob_drawable = (GifDrawable) mob.getDrawable();
-        mob_drawable.setLoopCount(1);
-        mob_death = new AnimationListener() {
-            @Override
-            public void onAnimationCompleted(int loopNumber) {
-                mob.setImageResource(no_mob);
-            }
+    private Pair<SoundPool, Integer> loadSfx(int sound){
+        SoundPool soundPool;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            soundPool = (new SoundPool.Builder()).setMaxStreams(2).build();
+        }else{
+            soundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 5);
+        }
+        //Load the sound
+        int sound_val = soundPool.load(getApplicationContext(), sound, 1);
+//        soundPool.play(sound_val, 1.0F, 1.0F, 0, 0, 1.0F);
+        Pair<SoundPool, Integer> sfx = new Pair<SoundPool, Integer>(soundPool, sound_val);
 
-        };
-        mob_drawable.removeAnimationListener(mob_move);
-        mob_drawable.addAnimationListener(mob_death);
-        Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
-        spawn_mob();
+        return sfx;
     }
 
-
-    private void spawn_mob() {
-        int spawnTime = ThreadLocalRandom.current().nextInt(5000, 15000+1);
-
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Activity lB = MainActivity.this;
-                lB.runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "A wild Slime has appeared!", Toast.LENGTH_SHORT).show();
-                        mob_start();
-
-                    }
-                });
-            }
-        }, spawnTime);
-    }
-
-    private void mob_start(){
-            spawnFx.start();
-            mob.setImageResource(slime_spawn);
-            mob_drawable = (GifDrawable) mob.getDrawable();
-            mob_drawable.setLoopCount(1);
-            mob_move = new AnimationListener() {
-                @Override
-                public void onAnimationCompleted(int loopNumber) {
-                    mob.setImageResource(slime_move);
-
-                }
-            };
-            mob_drawable.removeAnimationListener(mob_death);
-            mob_drawable.addAnimationListener(mob_move);
-
-            bossHP=totalHP;
-            isAlive=true;//Listens to screen being pressed
-            startAttackListener();
-
-    }
-
-    public void startBgmListener(){
+    private void startBgmListener(){
         Boolean clicked = new Boolean(false);
         sound.setTag(clicked); // Button wasn't clicked
         sound.setOnClickListener(new View.OnClickListener() {
@@ -294,45 +220,57 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    // Create Damage Text and sets the font, size, text, position
-    public void createDamageText(int damageTaken, float x, float y){
-        String damage = Integer.toString(damageTaken);
-        final WeakReference<TextView> damageText = new WeakReference<TextView>(new TextView(getApplicationContext()));
-        damageText.get().setLayoutParams(RL_lp);
-        damageText.get().setSingleLine();
-        RL.addView(damageText.get());
 
-        damageText.get().setTypeface(comic_sans);
-        damageText.get().setTextSize(normalDmgSize);
-        Shader textShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
-                new int[]{dmgTop,dmgBottom},
-                new float[]{0, 1}, Shader.TileMode.CLAMP);
-        damageText.get().setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
+    /*
+     * Mob Functions
+     */
+    private void startAttackListener() {
 
-        damageText.get().getPaint().setShader(textShader);
-        if(damageTaken>=900000){
-            damageText.get().setTextSize(critialDmgSize);
-            Shader critShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
-                    new int[]{critTop, critBottom},
-                    new float[]{0, 1}, Shader.TileMode.CLAMP);
-            damageText.get().getPaint().setShader(critShader);
-        }else if (damageTaken<500000){
-            damage = " MISS ";
-        }
-        damageText.get().setText(damage);
+        screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch (View v, MotionEvent event){
+                switch (event.getAction()) {
 
-        // Position damageText to Click position
-        damageText.get().setX(FL.getWidth()/2-300);
-        damageText.get().setY(FL.getHeight()/2);
-        damageText.get().animate().translationYBy(-300).alpha(0.15f).setDuration(1000).withEndAction(new Runnable(){
-            public void run(){
-                // rRemove the view from the parent layout
-                RL.removeView(damageText.get());
+                    // Pressed
+                    case MotionEvent.ACTION_DOWN: {
+                        if (bossHP == 0){
+                            break;
+                        }
+                        playSfx(dmgFx);
+
+                        // Generate random Damage and create damage Text
+                        int damageTaken=0;
+                        int x = (int) event.getRawX()+140; //Hardcoded adjustment for mob position
+                        int y = (int) event.getRawY()-180;
+
+                        if (inRange(x,y)){
+                            damageTaken = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
+                        }
+                        createDamageText(damageTaken, x, y);
+
+                        FL.removeView(mob);
+                        mob.setImageResource(slime_hurt);
+                        FL.addView(mob,0);
+                        decreaseHP(damageTaken);
+                        break;
+                    }
+                    // Released
+                    case MotionEvent.ACTION_UP: {
+                        if (bossHP == 0){
+                            break;
+                        }
+                        FL.removeView(mob);
+                        mob.setImageResource(slime_move);
+                        FL.addView(mob,0);
+                        break;
+                    }
+                }
+                return isAlive;
             }
-        });;
+        });
     }
 
-    public void decreaseHP(int damageTaken){
+    private void decreaseHP(int damageTaken){
         if (bossHP-damageTaken>0) {
             bossHP -= damageTaken;
         }else{
@@ -383,13 +321,117 @@ public class MainActivity extends AppCompatActivity {
         HpBar.startAnimation(fadeOut);
     }
 
-    public int toPercentage(int val, int total){
+    // Create Damage Text and sets the font, size, text, position
+    private void createDamageText(int damageTaken, float x, float y){
+        String damage = Integer.toString(damageTaken);
+        final WeakReference<TextView> damageText = new WeakReference<TextView>(new TextView(getApplicationContext()));
+        damageText.get().setLayoutParams(RL_lp);
+        damageText.get().setSingleLine();
+        RL.addView(damageText.get());
+
+        damageText.get().setTypeface(comic_sans);
+        damageText.get().setTextSize(dmgSize);
+        Shader textShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
+                new int[]{dmgTop,dmgBottom},
+                new float[]{0, 1}, Shader.TileMode.CLAMP);
+        damageText.get().setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
+
+        damageText.get().getPaint().setShader(textShader);
+        if(damageTaken>=900000){
+            damageText.get().setTextSize(dmgSize);
+            Shader critShader=new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
+                    new int[]{critTop, critBottom},
+                    new float[]{0, 1}, Shader.TileMode.CLAMP);
+            damageText.get().getPaint().setShader(critShader);
+        }else if (damageTaken<500000){
+            damage = " MISS ";
+        }
+        damageText.get().setText(damage);
+
+        // Position damageText to Click position
+        damageText.get().setX(FL.getWidth()/2-300);
+        damageText.get().setY(FL.getHeight()/2);
+        damageText.get().animate().translationYBy(-300).alpha(0.15f).setDuration(1000).withEndAction(new Runnable(){
+            public void run(){
+                // rRemove the view from the parent layout
+                RL.removeView(damageText.get());
+            }
+        });;
+    }
+
+    private void mob_death() {
+        playSfx(deathFx);
+        mob.setImageResource(slime_death);
+        mob_drawable = (GifDrawable) mob.getDrawable();
+        mob_drawable.setLoopCount(1);
+        mob_death = new AnimationListener() {
+            @Override
+            public void onAnimationCompleted(int loopNumber) {
+                mob.setImageResource(no_mob);
+            }
+
+        };
+        mob_drawable.removeAnimationListener(mob_move);
+        mob_drawable.addAnimationListener(mob_death);
+        Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
+        spawn_mob();
+    }
+
+
+    private void spawn_mob() {
+        int spawnTime = ThreadLocalRandom.current().nextInt(5000, 15000+1);
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Activity lB = MainActivity.this;
+                lB.runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "A wild Slime has appeared!", Toast.LENGTH_SHORT).show();
+                        mob_start();
+
+                    }
+                });
+            }
+        }, spawnTime);
+    }
+
+    private void mob_start(){
+        playSfx(spawnFx);
+        mob.setImageResource(slime_spawn);
+        mob_drawable = (GifDrawable) mob.getDrawable();
+        mob_drawable.setLoopCount(1);
+        mob_move = new AnimationListener() {
+            @Override
+            public void onAnimationCompleted(int loopNumber) {
+                mob.setImageResource(slime_move);
+
+            }
+        };
+        mob_drawable.removeAnimationListener(mob_death);
+        mob_drawable.addAnimationListener(mob_move);
+
+        bossHP=totalHP;
+        isAlive=true;//Listens to screen being pressed
+        startAttackListener();
+
+    }
+
+    /*
+     * Helper functions
+     */
+
+    private int toPercentage(int val, int total){
         return (int)(((float)val/(float)total)*100);
     }
 
-    public Boolean inRange(int x, int y){
+    // Check whether player click is on the monster
+    private Boolean inRange(int x, int y){
         return (x>(FL.getWidth()/2)-(mob.getWidth()/3) && x<(FL.getWidth()/2)+(mob.getWidth()/3))
                 && (y>(FL.getHeight()/2)-(mob.getHeight()/3) && y<(FL.getHeight()/2)+(mob.getHeight()/3));
     }
+
 }
 
