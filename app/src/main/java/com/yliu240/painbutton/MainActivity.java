@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
@@ -36,6 +37,7 @@ import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
@@ -51,23 +53,28 @@ public class MainActivity extends AppCompatActivity {
     int dmgTop, dmgBottom, critTop, critBottom;
     int bossHP;
     int totalHP = 100000000;
-    ProgressBar HpBar;
+    int totalEXP = 1000;
+    int currentEXP = 0;
+    int amt_exp = 100;
+    int currentLevel = 1;
+    ProgressBar HpBar, ExpBar;
     Boolean isAlive;
     ImageButton sound = null;
     MediaPlayer bgm;
     Pair<SoundPool, Integer> dmgFx, spawnFx, deathFx;
-    ImageView screenInFrontOfMob;
-    TextView bossHP_text;
+    ImageView screenInFrontOfMob, bg_img;
+    TextView bossHP_text, level_text, exp_val_text, exp_percent_text;
     GifImageView mob;
     GifDrawable mob_drawable;
     AnimationListener mob_death, mob_move;
     FrameLayout FL;
     FrameLayout.LayoutParams FL_lp;
-    RelativeLayout RL;
-    RelativeLayout.LayoutParams RL_lp;
+    RelativeLayout RL, RL_hp;
+    RelativeLayout.LayoutParams RL_lp, RL_lp_exp;
     Typeface comic_sans;
     int dmgSize = 50;
     private static final String TAG = "DEBUG: ";
+    private static final String LV = "LV. ";
 
 
     @Override
@@ -96,14 +103,15 @@ public class MainActivity extends AppCompatActivity {
         RL_lp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
+        RL_lp_exp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
+                RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
+        RL_lp_exp.addRule(RelativeLayout.ABOVE,R.id.bottom_bar);
+        RL_hp = (RelativeLayout) findViewById(R.id.relayout_hp);
 
-        // Creating Mob
-        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
-        mob = new GifImageView(getApplicationContext());
-        mob.setLayoutParams(FL_lp);
-        mob.setImageResource(R.drawable.no_mob);
-        FL.addView(mob,0);
-        spawn_mob();
+
+        loadJson();
+
 
         //Colors For damageText
         dmgTop=ContextCompat.getColor(MainActivity.this, R.color.dmgTop);
@@ -114,12 +122,38 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Other Variables
         HpBar = (ProgressBar)findViewById(R.id.HpBar);
-        HpBar.setMax(100);
         HpBar.setProgress(100);
+        ExpBar = (ProgressBar)findViewById(R.id.ExpBar);
+        ExpBar.setMax(totalEXP);
+        ExpBar.setProgress(currentEXP);
+        Drawable exp_drawable = getResources().getDrawable(R.drawable.expbar_drawable);
+        ExpBar.setProgressDrawable(exp_drawable);
         bossHP=totalHP;
+
+        // Get TextViews
         bossHP_text = (TextView) findViewById(R.id.hp);
+        level_text = (TextView) findViewById(R.id.level);
+        exp_val_text = (TextView) findViewById(R.id.Exp_val);
+        exp_percent_text = (TextView) findViewById(R.id.Exp_percent);
+
+        // Set TextViews
         bossHP_text.setTypeface(comic_sans);
         bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
+        level_text.setText(String.format(Locale.CANADA,"%s %d",LV, currentLevel));
+        exp_val_text.setText(String.valueOf(currentEXP));
+        exp_percent_text.setText(String.format(Locale.CANADA," [%.2f%%]",toPercentage(currentEXP,totalEXP)));
+
+    }
+
+    private void loadJson() {
+        // Creating Mob
+        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
+        FL.setBackgroundResource(R.drawable.treedungeon);
+        mob = new GifImageView(getApplicationContext());
+        mob.setLayoutParams(FL_lp);
+        mob.setImageResource(R.drawable.no_mob);
+        FL.addView(mob,0);
+        spawn_mob();
     }
 
 
@@ -132,9 +166,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause()
-    {
+    protected void onPause(){
         super.onPause();
+
         bgm.pause();
         sound.setOnClickListener(null);
         System.gc();
@@ -143,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
+
         bgm.stop();
         sound.setOnClickListener(null);
         System.gc();
@@ -151,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
+
         startBgmListener();
         bgm.start();
     }
@@ -190,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startBgmListener(){
         Boolean clicked = new Boolean(false);
-        sound.setTag(clicked); // Button wasn't clicked
+        sound.setTag(clicked); // Button isn't clicked on default
         sound.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -287,7 +323,7 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         bossHP_text.setText(String.valueOf(bossHP)+"/"+String.valueOf(totalHP));
-        int hp = toPercentage(bossHP,totalHP);
+        int hp = (int)toPercentage(bossHP,totalHP);
         if(hp >= 66){
             HpBar.getProgressDrawable().setColorFilter(0xff00ff00,android.graphics.PorterDuff.Mode.MULTIPLY);
         }else if(hp < 66 && hp >= 33){
@@ -297,8 +333,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         HpBar.setProgress(hp);
-        HpBar.setVisibility(View.VISIBLE);
-        bossHP_text.setVisibility(View.VISIBLE);
+        RL_hp.setVisibility(View.VISIBLE);
+//        HpBar.setVisibility(View.VISIBLE);
+//        bossHP_text.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
         fadeOut.setDuration(4000);
@@ -313,12 +350,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animation animation)
             {
-                bossHP_text.setVisibility(View.INVISIBLE);
-                HpBar.setVisibility(View.INVISIBLE);
+                RL_hp.setVisibility(View.INVISIBLE);
+//                bossHP_text.setVisibility(View.INVISIBLE);
+//                HpBar.setVisibility(View.INVISIBLE);
             }
         });
-        bossHP_text.startAnimation(fadeOut);
-        HpBar.startAnimation(fadeOut);
+        RL_hp.startAnimation(fadeOut);
+//        bossHP_text.startAnimation(fadeOut);
+//        HpBar.startAnimation(fadeOut);
     }
 
     // Create Damage Text and sets the font, size, text, position
@@ -349,16 +388,15 @@ public class MainActivity extends AppCompatActivity {
         damageText.get().setText(damage);
 
         // Position damageText to Click position
-        damageText.get().setX(FL.getWidth()/2-300);
-        damageText.get().setY(FL.getHeight()/2);
+        damageText.get().setX(FL.getWidth()/2-350);
+        damageText.get().setY(FL.getHeight()/2-50);
         damageText.get().animate().translationYBy(-300).alpha(0.15f).setDuration(1000).withEndAction(new Runnable(){
             public void run(){
                 // rRemove the view from the parent layout
                 RL.removeView(damageText.get());
             }
-        });;
+        });
     }
-
     private void mob_death() {
         playSfx(deathFx);
         mob.setImageResource(slime_death);
@@ -373,13 +411,41 @@ public class MainActivity extends AppCompatActivity {
         };
         mob_drawable.removeAnimationListener(mob_move);
         mob_drawable.addAnimationListener(mob_death);
-        Toast.makeText(MainActivity.this, "DEFEATED", Toast.LENGTH_SHORT).show();
+        updateExp();
         spawn_mob();
+    }
+
+    private void updateExp() {
+        final TextView gainExp = new TextView(getApplicationContext());
+        gainExp.setLayoutParams(RL_lp_exp);
+        gainExp.setTextColor(getResources().getColor(R.color.levelColor));
+        gainExp.setText(String.format(Locale.CANADA, "+%d EXP", amt_exp));
+        RL.addView(gainExp);
+        gainExp.animate().translationYBy(-40).alpha(1f).setDuration(3000).withEndAction(new Runnable(){
+            public void run(){
+                // Remove the view from the parent layout
+                RL.removeView(gainExp);
+            }
+        });
+        currentEXP+=amt_exp;
+        exp_val_text.setText(String.valueOf(currentEXP));
+        exp_percent_text.setText(String.format(Locale.CANADA," [%.2f%%]",toPercentage(currentEXP,totalEXP)));
+        ExpBar.setProgress(currentEXP);
+        if(currentEXP>=totalEXP){
+            currentLevel++;
+            currentEXP=0;
+            ExpBar.setProgress(currentEXP);
+            level_text.setText(String.format(Locale.CANADA,"%s %d",LV, currentLevel));
+            amt_exp+=amt_exp;
+            totalEXP*=3;
+            exp_val_text.setText(String.valueOf(currentEXP));
+            exp_percent_text.setText(String.format(Locale.CANADA," [%.2f%%]",toPercentage(currentEXP,totalEXP)));
+        }
     }
 
 
     private void spawn_mob() {
-        int spawnTime = ThreadLocalRandom.current().nextInt(5000, 15000+1);
+        int spawnTime = ThreadLocalRandom.current().nextInt(5000, 9000+1);
 
         new Timer().schedule(new TimerTask() {
             @Override
@@ -423,8 +489,8 @@ public class MainActivity extends AppCompatActivity {
      * Helper functions
      */
 
-    private int toPercentage(int val, int total){
-        return (int)(((float)val/(float)total)*100);
+    private float toPercentage(int val, int total){
+        return (((float)val/(float)total)*100);
     }
 
     // Check whether player click is on the monster
