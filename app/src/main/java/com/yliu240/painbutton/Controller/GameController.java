@@ -2,10 +2,14 @@ package com.yliu240.painbutton.Controller;
 
 import com.google.gson.annotations.Expose;
 import android.content.Context;
+import android.media.MediaPlayer;
+
 import com.google.gson.annotations.SerializedName;
 import com.yliu240.painbutton.Model.MapLevel;
 import com.yliu240.painbutton.Model.Mob;
 import com.yliu240.painbutton.Model.Player;
+
+import org.javatuples.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +40,8 @@ public class GameController {
     private Mob currentMob;
     @Expose(serialize = false, deserialize = false)
     private Context context;
+    @Expose(serialize = false, deserialize = false)
+    private MediaPlayer bgm;
 
 
     private static GameController gameControllerInstance;
@@ -49,9 +55,9 @@ public class GameController {
         return gameControllerInstance;
     }
 
-    static public synchronized void setInstance(GameController newInstance) {
+    static public synchronized void setInstance(GameController newInstance, Context mContext) {
         gameControllerInstance = newInstance;
-//        gameControllerInstance.context = mContext;
+        gameControllerInstance.context = mContext;
     }
 
 
@@ -114,31 +120,28 @@ public class GameController {
 
 
     // Game Methods
-    public void decreaseHP(int damage){
-        int hp = current_mob.getCurrent_hp();
-        if (hp - damage > 0) {
-            current_mob.setCurrent_hp(hp-damage);
-        } else {
-            current_mob.setCurrent_hp(0);
+    public Pair<Integer,Boolean> attackMob(){
+        int damage = (int) ThreadLocalRandom.current().nextDouble(myPlayer.getAttack()*0.5,  (myPlayer.getAttack() + 1)*1.5);
+        Boolean critical = isCritical();
+        if(critical){
+            damage *= myPlayer.getAttack_multiplier();
         }
+        if(damage > 999999){
+            damage = 999999;
+        }
+        current_mob.takeDamage(damage);
+        return new Pair<>(damage, critical);
     }
 
     public Boolean isCritical(){
         double critical_rate = ThreadLocalRandom.current().nextInt(0, 100 + 1);
-        if (critical_rate > myPlayer.getCritical_rate()) {
-            return false;
-        }
-        return true;
+        return critical_rate < myPlayer.getCritical_rate();
     }
 
     public Boolean gainEXP(){
         int new_exp = myPlayer.getExp()+current_mob.getExp();
-        int total_exp = myPlayer.getTotal_exp();
-        int level = myPlayer.getLevel();
-        if(new_exp >= total_exp){
-            myPlayer.setExp(0);
-            myPlayer.setLevel(level+1);
-            myPlayer.setTotal_exp(total_exp*3);
+        if(new_exp >= myPlayer.getTotal_exp()){
+            myPlayer.level_up();
             return true;
         }else{
             myPlayer.setExp(new_exp);
@@ -146,7 +149,33 @@ public class GameController {
         }
     }
 
-    public void startBgm(){
+    public void createBgm(){
+        if (bgm != null){
+            bgmCtrl("stop");
+        }
+        bgm = MediaPlayer.create(this.context, getDrawableId(current_map.getBgm_name(), "raw"));
+        bgm.start();
+        bgm.setLooping(true);
+    }
 
+    public void bgmCtrl(String action){
+        switch (action){
+            case "stop":
+                bgm.stop();
+                break;
+            case "pause":
+                bgm.pause();
+                break;
+            case "start":
+                bgm.start();
+                break;
+            default:
+                bgm.stop();
+                break;
+        }
+    }
+
+    private int getDrawableId(String name, String type){
+        return this.context.getResources().getIdentifier(name, type, this.context.getPackageName());
     }
 }

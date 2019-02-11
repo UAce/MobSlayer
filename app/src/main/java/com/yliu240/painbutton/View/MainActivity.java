@@ -9,7 +9,6 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -28,7 +27,6 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.yliu240.painbutton.Controller.GameController;
@@ -52,21 +50,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class MainActivity extends AppCompatActivity {
 
-    private int dmgTop, dmgBottom, critTop, critBottom;
-    private int mobHP;
-    private int totalHP = 50000000;
-    private int totalEXP = 1000;
-    private int currentEXP = 0;
-    private int amt_exp = 850;
-    private int currentLevel = 1;
-    private int attack; //How much can the character hit
+    private int dmgTop, dmgBottom, critTop, critBottom, offsetX, offsetY;
     private ProgressBar HpBar, ExpBar;
-    private Boolean isAlive;
-    private Boolean hit = false;
+    private Boolean isAlive, hit;
     private ImageButton sound = null;
-    private MediaPlayer bgm;
     private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound;
-    private ImageView screenInFrontOfMob, bg_img;
+    private ImageView screenInFrontOfMob;
     private TextView mobHP_text, level_text, exp_val_text, exp_percent_text;
     private GifImageView mobView;
     private GifDrawable mob_drawable;
@@ -76,14 +65,15 @@ public class MainActivity extends AppCompatActivity {
     private RelativeLayout RL, RL_hp;
     private RelativeLayout.LayoutParams RL_lp, RL_lp_exp;
     private Typeface comic_sans;
-    final private int dmgSize = 50;
+    private GameController gcInstance;
+    private Context mContext;
+    private final int dmgSize = 50;
     private static final String TAG = "@@@@@@@@@@@@@@@DEBUG ";
     private static final String MISS = "  MISS";
     private static final String LV = "LV. ";
     private static final String RAW = "raw";
     private static final String DRAW = "drawable";
-    private GameController gcInstance;
-    private Context mContext;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,14 +111,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Variables for HP bar, EXP bar and set values
         HpBar = (ProgressBar) findViewById(R.id.HpBar);
-//        HpBar.setMax(100);
-//        HpBar.setProgress(100);
         ExpBar = (ProgressBar) findViewById(R.id.ExpBar);
-//        ExpBar.setMax(totalEXP);
-//        ExpBar.setProgress(currentEXP);
         Drawable exp_drawable = ContextCompat.getDrawable(mContext, R.drawable.expbar_drawable);;
         ExpBar.setProgressDrawable(exp_drawable);
-//        mobHP = totalHP;
 
         // Get TextViews
         mobHP_text = (TextView) findViewById(R.id.hp);
@@ -138,10 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set TextViews
         mobHP_text.setTypeface(comic_sans);
-//        mobHP_text.setText(String.valueOf(mobHP) + "/" + String.valueOf(totalHP));
-//        level_text.setText(String.format(Locale.CANADA, "%s %d", LV, currentLevel));
-//        exp_val_text.setText(String.valueOf(currentEXP));
-//        exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", toPercentage(currentEXP, totalEXP)));
+
         setGameProperties();
     }
 
@@ -152,10 +134,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             InputStream ims = assetManager.open("gameInfo.json");
             Reader reader = new InputStreamReader(ims);
-            gcInstance = gson.fromJson(reader, GameController.class);
-            GameController.setInstance(gcInstance);
-            gcInstance.setCurrent_map(gcInstance.getCurrent_mapId());
-            gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
+            GameController instance = gson.fromJson(reader, GameController.class);
+            GameController.setInstance(instance, mContext);
+            gcInstance = GameController.getInstance();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -164,14 +145,14 @@ public class MainActivity extends AppCompatActivity {
     private void setGameProperties() {
         loadJson();
 
-        // Set Background picture
+        // Set Map properties
+        gcInstance.setCurrent_map(gcInstance.getCurrent_mapId());
         FL.setBackgroundResource(get_drawable_id(gcInstance.getCurrent_map().getBg_image(), DRAW));
+        gcInstance.createBgm();
 
-        // Set Background music
-        set_mob_sound();
-        bgm = MediaPlayer.create(mContext, get_drawable_id(gcInstance.getCurrent_map().getBgm_name(), RAW));
-        bgm.start();
-        bgm.setLooping(true);
+        // Set Mob Properties
+        gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
+        setMobSoundAndOffsets();
 
         // Set HP and EXP bar
         HpBar.setMax(gcInstance.getCurrent_mob().getTotal_hp());
@@ -206,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        bgm.pause();
+        gcInstance.bgmCtrl("pause");
         sound.setOnClickListener(null);
         System.gc();
     }
@@ -215,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-        bgm.stop();
+        gcInstance.bgmCtrl("stop");
         sound.setOnClickListener(null);
         System.gc();
     }
@@ -226,19 +207,8 @@ public class MainActivity extends AppCompatActivity {
 
         gcInstance = GameController.getInstance();
         startBgmListener();
-        bgm.start();
+        gcInstance.bgmCtrl("start");
     }
-
-
-    // Useful method for another time
-//    public static void sendViewToBack(final View child) {
-//        final ViewGroup parent = (ViewGroup)child.getParent();
-//        if (null != parent) {
-//            parent.removeView(child);
-//            parent.addView(child, 0);
-//        }
-//    }
-
 
     /*
      * Sound Functions
@@ -258,16 +228,17 @@ public class MainActivity extends AppCompatActivity {
         }
         //Load the sound
         int sound_val = soundPool.load(mContext, soundId, 1);
-//        soundPool.play(sound_val, 1.0F, 1.0F, 0, 0, 1.0F);
-        Pair<SoundPool, Integer> sfx = new Pair<SoundPool, Integer>(soundPool, sound_val);
+        Pair<SoundPool, Integer> sfx = new Pair<>(soundPool, sound_val);
 
         return sfx;
     }
 
-    private void set_mob_sound(){
+    private void setMobSoundAndOffsets(){
         hit_sound = load_Sound(gcInstance.getCurrent_mob().getHit_sound());
         death_sound = load_Sound(gcInstance.getCurrent_mob().getDeath_sound());
         spawn_sound = load_Sound(gcInstance.getCurrent_mob().getSpawn_sound());
+        offsetX = gcInstance.getCurrent_mob().getOffsetX();
+        offsetY = gcInstance.getCurrent_mob().getOffsetY();
     }
 
     private void startBgmListener() {
@@ -276,27 +247,15 @@ public class MainActivity extends AppCompatActivity {
         sound.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg;
                 if (((Boolean) sound.getTag()) == false) {
                     sound.setImageResource(R.drawable.baseline_volume_off_24);
-                    bgm.pause();
-                    msg = "Mute";
+                    gcInstance.bgmCtrl("pause");
                     sound.setTag(new Boolean(true));
                 } else {
                     sound.setImageResource(R.drawable.baseline_volume_up_24);
-                    bgm.start();
-                    msg = "Sound On";
+                    gcInstance.bgmCtrl("start");
                     sound.setTag(new Boolean(false));
                 }
-//                final Toast toast = Toast.makeText(mContext, msg, Toast.LENGTH_SHORT);
-//                toast.show();
-//                Handler handler = new Handler();
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        toast.cancel();
-//                    }
-//                }, 1000);
             }
         });
     }
@@ -314,33 +273,33 @@ public class MainActivity extends AppCompatActivity {
 
                     // Pressed
                     case MotionEvent.ACTION_DOWN: {
-                        if (mobHP == 0) {
+                        if (gcInstance.getCurrent_mob().isDead()) {
                             break;
                         }
                         play_Sound_Effect(hit_sound);
 
                         // Generate random Damage and create damage Text
-                        int damage = 0;
-                        int x = (int) event.getRawX() + 140; //Hardcoded adjustment for mob position
-                        int y = (int) event.getRawY() - 180;
+                        Pair<Integer, Boolean> damage = new Pair<>(0,false);
+                        int x = (int) event.getRawX() + offsetX; //Hardcoded adjustment for mob position
+                        int y = (int) event.getRawY() - offsetY;
 
                         if (inRange(x, y)) {
-                            damage = ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
+                            damage = gcInstance.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                         }
 
-                        if (!createDamageText(pad_damage(damage)).equals(MISS)) {
+                        if (!createDamageText(pad_damage(damage.getValue0()),damage.getValue1()).equals(MISS)) {
                             FL.removeView(mobView);
                             mobView.setImageResource(get_drawable_id(gcInstance.getCurrent_mob().getHit(), DRAW));
                             FL.addView(mobView, 0);
                             hit = true;
                         }
-                        gcInstance.decreaseHP(damage);
+//                        gcInstance.decreaseHP(damage);
                         updateHP();
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
-                        if (mobHP == 0) {
+                        if (gcInstance.getCurrent_mob().isDead()) {
                             break;
                         } else if (hit) {
                             FL.removeView(mobView);
@@ -362,8 +321,6 @@ public class MainActivity extends AppCompatActivity {
             isAlive = false;
             Activity lC = MainActivity.this;
             lC.runOnUiThread(new Runnable() {
-//            runOnUiThread(new Runnable() {
-
                 @Override
                 public void run() {
                     mob_death();
@@ -382,8 +339,6 @@ public class MainActivity extends AppCompatActivity {
 
         HpBar.setProgress(gcInstance.getCurrent_mob().getCurrent_hp());
         RL_hp.setVisibility(View.VISIBLE);
-//        HpBar.setVisibility(View.VISIBLE);
-//        mobHP_text.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
         fadeOut.setDuration(4000);
@@ -400,17 +355,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animation animation) {
                 RL_hp.setVisibility(View.INVISIBLE);
-//                mobHP_text.setVisibility(View.INVISIBLE);
-//                HpBar.setVisibility(View.INVISIBLE);
             }
         });
         RL_hp.startAnimation(fadeOut);
-//        mobHP_text.startAnimation(fadeOut);
-//        HpBar.startAnimation(fadeOut);
     }
 
     // Create Damage Text and sets the font, size, text, position
-    private String createDamageText(String damage) {
+    private String createDamageText(String damage, Boolean critical) {
         final WeakReference<TextView> damageText = new WeakReference<>(new TextView(mContext));
         damageText.get().setLayoutParams(RL_lp);
         damageText.get().setSingleLine();
@@ -424,7 +375,7 @@ public class MainActivity extends AppCompatActivity {
         damageText.get().setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
 
         damageText.get().getPaint().setShader(textShader);
-        if (gcInstance.isCritical()) {
+        if (critical) {
             damageText.get().setTextSize(dmgSize);
             Shader critShader = new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
                     new int[]{critTop, critBottom},
@@ -450,12 +401,17 @@ public class MainActivity extends AppCompatActivity {
         if (dmg == 0) {
             return MISS;
         }
-        int length = (int) (Math.log10(dmg) + 1);
         StringBuffer sb = new StringBuffer();
-        while (length < 6) {
-            sb.append(" ");
-        }
         sb.append(dmg);
+        int length = (int) (Math.log10(dmg) + 1);
+        if(length == 5){
+            sb.append(" ");
+        }else if(length < 5){
+            while(length < 6){
+                sb.append(" ");
+                length++;
+            }
+        }
         return sb.toString();
     }
 
@@ -499,7 +455,6 @@ public class MainActivity extends AppCompatActivity {
         exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gcInstance.getPlayer().getEXP_percent()));
     }
 
-
     private void wait_to_spawn() {
         int spawnTime = ThreadLocalRandom.current().nextInt(5000, 9000 + 1);
 
@@ -508,12 +463,10 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 Activity lB = MainActivity.this;
                 lB.runOnUiThread(new Runnable() {
-//                runOnUiThread(new Runnable() {
-
                     @Override
                     public void run() {
-                        Toast.makeText(mContext, String.format(Locale.CANADA, "A wild %s has appeared!",
-                                gcInstance.getCurrent_mob().getName()), Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(mContext, String.format(Locale.CANADA, "A wild %s has appeared!",
+//                                gcInstance.getCurrent_mob().getName()), Toast.LENGTH_SHORT).show();
                         spawn_mob();
                     }
                 });
@@ -536,8 +489,8 @@ public class MainActivity extends AppCompatActivity {
         mob_drawable.removeAnimationListener(mob_death);
         mob_drawable.addAnimationListener(mob_move);
 
-        mobHP = totalHP;
         isAlive = true;//Listens to screen being pressed
+        hit = false;
         startAttackListener();
     }
 

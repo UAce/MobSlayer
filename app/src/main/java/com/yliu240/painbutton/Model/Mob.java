@@ -119,4 +119,16 @@ public class Mob {
         return ((float) this.current_hp / (float) this.total_hp)*100.0f;
     }
 
+    public Boolean isDead(){
+        return this.current_hp==0;
+    }
+
+    public void takeDamage(int damage){
+        if (this.current_hp - damage > 0) {
+            this.current_hp -= damage;
+        } else {
+            this.current_hp = 0;
+        }
+    }
+
 }

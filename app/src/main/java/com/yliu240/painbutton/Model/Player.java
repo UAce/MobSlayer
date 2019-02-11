@@ -66,6 +66,13 @@ public class Player {
     }
 
     // Other methods
+    public void level_up(){
+        this.level+=1;
+        this.attack*=2.5;
+        this.attack_multiplier*=2;
+        this.exp=0;
+        this.total_exp*=3;
+    }
     public String getEXP_toString(){
         return String.valueOf(this.exp);
     }

@@ -44,8 +44,6 @@ dependencies {
     compile 'pl.droidsonroids.gif:android-gif-drawable:1.2.+'
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'org.javatuples:javatuples:1.2'
-    compile 'com.fasterxml.jackson.core:jackson-core:2.8.9'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.9'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.9'
+
 }
 
