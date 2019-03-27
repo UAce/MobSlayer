@@ -1,1 +1,1 @@
-PainButton is a mobile application where you can attack the King Slime from MapleStory by tapping on him.
+Mob-Slayer is a mobile application where you can attack Mobs from MapleStory.
