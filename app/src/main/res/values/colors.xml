@@ -15,14 +15,14 @@
     <color name="BottomInfoColor">#B32B303C</color>
 
     <!--Damage Font Gradient-->
-    <color name="dmgTop">#f33012</color>
-    <color name="dmgBottom">#eede30</color>
+    <color name="dmgTop">#E72507</color>
+    <color name="dmgBottom">#EEDE30</color>
     <color name="critTop">#d70100</color>
     <color name="critBottom">#dd6ecc</color>
 
     <!--Level Color-->
-    <color name="GainExpColor">#b5faee44</color>
-    <color name="LevelColor">#B3EFCD52</color>
+    <color name="GainExpColor">#D8FAEE44</color>
+    <color name="LevelColor">#E9EFCD52</color>
 
     <!--Arrow Color-->
     <color name="ArrowColor">#faee44</color>

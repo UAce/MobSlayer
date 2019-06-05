@@ -3,7 +3,6 @@ package com.yliu240.mobslayer.View;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
@@ -14,7 +13,6 @@ import android.media.SoundPool;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -30,24 +28,21 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
-import com.yliu240.mobslayer.Controller.GameController;
-import com.yliu240.mobslayer.R;
-
 import org.javatuples.Pair;
-
 import pl.droidsonroids.gif.AnimationListener;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.ref.WeakReference;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import com.google.gson.Gson;
+
+import com.yliu240.mobslayer.Controller.GameController;
+import com.yliu240.mobslayer.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private Typeface comic_sans;
     private GameController gcInstance;
     private Context mContext;
-    private final int dmgSize = 50;
+    private final int DAMAGE_SIZE = 60;
     private static final String TAG = "@@@@@@@@@@@@@@@DEBUG ";
     private static final String MISS = "  MISS  ";
     private static final String LV = "LV. ";
@@ -509,38 +504,36 @@ public class MainActivity extends AppCompatActivity {
 
     // Create Damage Text and sets the font, size, text, position
     private String createDamageText(String damage, Boolean critical) {
-        final WeakReference<TextView> damageText = new WeakReference<>(new TextView(mContext));
-        damageText.get().setLayoutParams(RL_lp);
-        damageText.get().setSingleLine();
-        RL.addView(damageText.get());
+        final TextView damageText = new TextView(getApplicationContext());
+        damageText.setLayoutParams(RL_lp);
+        damageText.setSingleLine();
+        damageText.setTypeface(comic_sans);
+        damageText.setTextSize(DAMAGE_SIZE);
+        damageText.setText(damage);
 
-        damageText.get().setTypeface(comic_sans);
-        damageText.get().setTextSize(dmgSize);
-        Shader textShader = new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
-                new int[]{dmgTop, dmgBottom},
-                new float[]{0, 1}, Shader.TileMode.CLAMP);
-        damageText.get().setShadowLayer(1.5f, 5.0f, 5.0f, Color.BLACK);
-
-        damageText.get().getPaint().setShader(textShader);
+        Shader shader;
         if (critical) {
-            damageText.get().setTextSize(dmgSize);
-            Shader critShader = new LinearGradient(0, 0, 0, damageText.get().getPaint().getTextSize(),
-                    new int[]{critTop, critBottom},
-                    new float[]{0, 1}, Shader.TileMode.CLAMP);
-            damageText.get().getPaint().setShader(critShader);
+            shader = new LinearGradient(0, 0, 0, damageText.getTextSize(),
+                    critTop, critBottom, Shader.TileMode.CLAMP);
+            damageText.setShadowLayer(0.01f, -2, 2, critTop);
+        } else {
+            shader = new LinearGradient(0, 0, 0, damageText.getTextSize(),
+                    dmgTop, dmgBottom, Shader.TileMode.CLAMP);
+            damageText.setShadowLayer(0.01f, -2, 2, dmgTop);
         }
-
-        damageText.get().setText(damage);
-        damageText.get().measure(0,0);
+        damageText.getPaint().setShader(shader);
+        damageText.setTextColor(damageText.getTextColors().withAlpha(255));
 
         // Position damageText to Click position
-        damageText.get().setX((FL.getWidth()/2) - (damageText.get().getMeasuredWidth()/2));
-        damageText.get().setY((FL.getHeight()/2) - (damageText.get().getMeasuredHeight()));
-//        Log.d(TAG, damageText.get().getMeasuredWidth()+"  |  "+damageText.get().getMeasuredHeight());
-        damageText.get().animate().translationYBy(-300).alpha(0.15f).setDuration(1000).withEndAction(new Runnable() {
+        damageText.measure(0,0);
+        damageText.setX((FL.getWidth()/2) - (damageText.getMeasuredWidth()/2));
+        damageText.setY((FL.getHeight()/2) - (damageText.getMeasuredHeight()));
+
+        RL.addView(damageText);
+        damageText.animate().translationYBy(-400).alpha(0.5f).setDuration(1000).withEndAction(new Runnable() {
             public void run() {
-                // rRemove the view from the parent layout
-                RL.removeView(damageText.get());
+                // Remove the view from the parent layout
+                RL.removeView(damageText);
             }
         });
         return damage;
