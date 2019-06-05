@@ -16,3 +16,6 @@ app/src/main/res/raw
 
 # Ignore game data
 app/src/main/assets
+
+# Ignore screenshots
+screenshots
