@@ -3,8 +3,17 @@
     <color name="colorPrimary">#d10000</color>
     <color name="colorPrimaryDark">#e1000000</color>
     <color name="transparentGray">#31d8d7d7</color>
+    <color name="transparent">#00d8d7d7</color>
     <color name="colorAccent">#FF4081</color>
     <color name="white">#f8ffffff</color>
+
+    <!--Splash Screen-->
+    <color name="TopTextColor">#f3522c</color>
+    <color name="BottomTextColor">#AD2411</color>
+
+    <!--Menu Title-->
+    <color name="BottomMenuColor">#FFFFFF</color>
+    <color name="TopMenuColor">#FFFFFF</color>
 
     <!--Background Gradient-->
     <color name="TopBgColor">#dbdada</color>

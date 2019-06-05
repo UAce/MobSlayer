@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton sound, right_arrow, left_arrow, skill_0 = null;
     private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound, sharp_eyes_effect, level_up_effect;
     private MediaPlayer bgm;
-    private ImageView screenInFrontOfMob;
+    private ImageView screenInFrontOfMob, mapView;
     private TextView mobHP_text, level_text, exp_val_text, exp_percent_text;
     private GifImageView mobView, buffView, levelUpView;
     private GifDrawable mob_drawable, buff_drawable, levelUp_drawable;
@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Variables for Layouts, Views
         screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
+        mapView = findViewById(R.id.mapView);
         FL = (FrameLayout) findViewById(R.id.framelayout);
         FL_lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
@@ -170,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Map properties
         gcInstance.setCurrent_map();
-        FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+        mapView.setImageResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
         createBgm();
 
         // Set Mob Properties
@@ -387,7 +388,7 @@ public class MainActivity extends AppCompatActivity {
                 gcInstance.switch_map(false);
 //                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
 //                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                mapView.setImageResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
@@ -397,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
                 gcInstance.switch_map(true);
 //                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
 //                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                mapView.setImageResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });

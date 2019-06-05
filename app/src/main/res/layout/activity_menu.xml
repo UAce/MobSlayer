@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.yliu240.mobslayer.View.MenuActivity"
+    android:id="@+id/menuFrameLayout">
+
+    <ImageView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/menu_background" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageButton
+            android:id="@+id/sound"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/baseline_volume_up_24" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/menuBoard"
+        android:layout_width="350dp"
+        android:layout_height="350dp"
+        android:layout_gravity="center"
+        android:background="@drawable/menu_board2">
+        <TextView
+            android:id="@+id/menuTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:textSize="50sp"
+            android:textColor="@color/white"
+            android:text="Menu"/>
+
+        <!--<TextView-->
+            <!--android:id="@+id/new_game"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="@drawable/menu_button_pressed"-->
+            <!--android:text="@string/new_game"-->
+            <!--android:layout_marginTop="110dp"-->
+            <!--android:textSize="35sp"-->
+            <!--android:gravity="center"-->
+            <!--android:textColor="@color/white"-->
+            <!--android:layout_centerHorizontal="true"/>-->
+
+        <!--<TextView-->
+            <!--android:id="@+id/load_game"-->
+            <!--android:layout_centerHorizontal="true"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_below="@+id/new_game"-->
+            <!--android:layout_marginTop="20dp"-->
+            <!--android:background="@drawable/menu_button_pressed"-->
+            <!--android:textSize="35sp"-->
+            <!--android:gravity="center"-->
+            <!--android:textColor="@color/white"-->
+            <!--android:text="@string/load_game" />-->
+        <ImageButton
+            android:id="@+id/new_game"
+            android:layout_centerHorizontal="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="110dp"
+            android:background="@color/transparent"
+            android:src="@drawable/new_game_button_selector" />
+
+        <ImageButton
+            android:id="@+id/load_game"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/new_game"
+            android:layout_marginTop="20dp"
+            android:background="@color/transparent"
+            android:src="@drawable/load_game_button_selector" />
+
+    </RelativeLayout>
+</FrameLayout>
