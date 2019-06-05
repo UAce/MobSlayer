@@ -2,7 +2,7 @@
 <resources>
     <color name="colorPrimary">#d10000</color>
     <color name="colorPrimaryDark">#e1000000</color>
-    <color name="colorGrey">#d8d7d7</color>
+    <color name="transparentGray">#31d8d7d7</color>
     <color name="colorAccent">#FF4081</color>
     <color name="white">#f8ffffff</color>
 
@@ -11,8 +11,8 @@
     <color name="BottomBgColor">#2d2d2d</color>
 
     <!--BottomBar Gradient-->
-    <color name="TopInfoColor">#606B6C</color>
-    <color name="BottomInfoColor">#2B303C</color>
+    <color name="TopInfoColor">#B3606B6C</color>
+    <color name="BottomInfoColor">#B32B303C</color>
 
     <!--Damage Font Gradient-->
     <color name="dmgTop">#f33012</color>
@@ -21,10 +21,13 @@
     <color name="critBottom">#dd6ecc</color>
 
     <!--Level Color-->
-    <color name="levelColor">#FAEE44</color>
-    <color name="LevelColor">#EFCD52</color>
+    <color name="GainExpColor">#b5faee44</color>
+    <color name="LevelColor">#B3EFCD52</color>
+
+    <!--Arrow Color-->
+    <color name="ArrowColor">#faee44</color>
 
     <!--HpBar background color-->
-    <color name="hp_bgColor">#5d5b5b5b</color>
+    <color name="hp_bgColor">#415b5b5b</color>
 
 </resources>

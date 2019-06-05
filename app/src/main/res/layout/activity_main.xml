@@ -6,7 +6,8 @@
     android:layout_height="fill_parent"
     android:layout_alignParentTop="true"
     android:layout_centerHorizontal="true"
-    tools:context="com.yliu240.painbutton.View.MainActivity"
+    android:scaleType="centerCrop"
+    tools:context="com.yliu240.mobslayer.View.MainActivity"
     android:id="@+id/framelayout">
 
     <!--<ImageView-->
@@ -23,143 +24,192 @@
 
         <RelativeLayout
             android:id="@+id/relayout_hp"
-            android:layout_marginTop="50dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="25dp"
             android:background="@color/hp_bgColor"
-            android:visibility="invisible"
-            android:layout_centerHorizontal="true">
+            android:visibility="invisible">
+
             <TextView
                 android:id="@+id/hp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
-                android:textAppearance="@style/BossHP_style"/>
+                android:textAppearance="@style/BossHP_style" />
 
             <ProgressBar
                 android:id="@+id/HpBar"
                 style="?android:attr/progressBarStyleHorizontal"
-                android:max="100"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/hp"
-                android:layout_centerHorizontal="true"/>
+                android:layout_centerHorizontal="true"
+                android:max="100" />
         </RelativeLayout>
 
         <LinearLayout
             android:id="@+id/bottom_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
             android:background="@drawable/info_gradient">
-        <LinearLayout
-            android:id="@+id/info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
-            android:paddingRight="5dp"
-            android:paddingLeft="5dp">
 
-            <TextView
-                android:id="@+id/level"
-                android:background="@drawable/level_gradient"
+            <LinearLayout
+                android:id="@+id/info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingBottom="5dp"
                 android:paddingLeft="5dp"
                 android:paddingRight="5dp"
-                android:textColor="@color/LevelColor"
-                android:textSize="20sp" />
+                android:paddingTop="5dp">
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/level"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/level_gradient"
+                    android:paddingBottom="10dp"
+                    android:paddingLeft="5dp"
+                    android:paddingRight="5dp"
+                    android:paddingTop="10dp"
+                    android:textColor="@color/LevelColor"
+                    android:textSize="20sp" />
 
-        <RelativeLayout
-            android:id="@+id/ExpInfo"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
-            android:paddingStart="5dp"
-            android:paddingEnd="10dp">
-            <TextView
-                android:id="@+id/ExpLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingEnd="10dp"
-                android:paddingStart="0dp"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:text="@string/expLabel" />
-            <TextView
-                android:id="@+id/Exp_val"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:layout_toStartOf="@+id/Exp_percent"
-                android:textSize="12sp"
-                android:text="0 " />
-            <TextView
-                android:id="@+id/Exp_percent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentTop="true"
-                android:textSize="12sp"
-                android:text="[0.00%]" />
-            <ProgressBar
-                android:id="@+id/ExpBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_below="@+id/ExpLabel"
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/ExpInfo"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
-                android:visibility="visible"
-                android:background="@drawable/bg_gradient"/>
+                android:paddingBottom="10dp"
+                android:paddingEnd="10dp"
+                android:paddingStart="5dp"
+                android:paddingTop="10dp">
 
+                <TextView
+                    android:id="@+id/ExpLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:paddingEnd="10dp"
+                    android:paddingStart="0dp"
+                    android:text="@string/expLabel"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
-        </RelativeLayout>
+                <TextView
+                    android:id="@+id/Exp_val"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toStartOf="@+id/Exp_percent"
+                    android:text="0 "
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/Exp_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentTop="true"
+                    android:text="[0.00%]"
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+
+                <ProgressBar
+                    android:id="@+id/ExpBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_below="@+id/ExpLabel"
+                    android:background="@drawable/bg_gradient"
+                    android:visibility="visible" />
+            </RelativeLayout>
 
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/buff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/bottom_bar"
+            android:layout_alignParentStart="true"
+            app:srcCompat="@drawable/no_buff" />
 
         <ImageView
             android:id="@+id/transparent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_above="@+id/bottom_bar"
             android:layout_gravity="bottom"
-            android:background="@drawable/no_mob"
-            android:layout_above="@+id/bottom_bar" />
+            android:background="@drawable/no_mob" />
 
         <ImageButton
             android:id="@+id/sound"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/bottom_bar"
             android:layout_alignParentEnd="true"
+            android:background="@color/transparentGray"
             app:srcCompat="@drawable/baseline_volume_up_24" />
+
+        <ImageButton
+            android:id="@+id/skill_0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/bottom_bar"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/sharp_eyes_enable"
+            android:visibility="visible" />
 
         <ImageButton
             android:id="@+id/skill_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/sound"
-            android:visibility="invisible"
-            android:layout_alignParentRight="true"/>
+            android:layout_above="@+id/skill_0"
+            android:layout_alignParentRight="true"
+            android:visibility="invisible" />
 
         <ImageButton
-            android:id="@+id/skill_2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/skill_1"
-            android:visibility="invisible"
-            android:layout_alignParentRight="true"/>
+            android:id="@+id/right_arrow"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            app:srcCompat="@drawable/right_arrow"
+            android:layout_marginTop="65dp"
+            android:layout_below="@+id/relayout_hp"
+            android:layout_alignStart="@+id/skill_0" />
+
+        <ImageButton
+            android:id="@+id/left_arrow"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignTop="@+id/right_arrow"
+            android:background="@android:color/transparent"
+            app:srcCompat="@drawable/left_arrow" />
+
+        <!--<LinearLayout-->
+        <!--android:id="@+id/buff_status"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentEnd="true"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--</LinearLayout>-->
+
+
+        <!--<ImageView-->
+        <!--android:id="@+id/imageView3"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="end"-->
+        <!--app:srcCompat="@drawable/sharp_eyes_enable" />-->
 
     </RelativeLayout>
-
 
 </FrameLayout>

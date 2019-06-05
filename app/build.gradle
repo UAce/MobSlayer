@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     buildToolsVersion "26.0.1"
     defaultConfig {
-        applicationId "com.yliu240.painbutton"
+        applicationId "com.yliu240.mobslayer"
         minSdkVersion 21
         targetSdkVersion 26
         versionCode 1
@@ -19,7 +19,7 @@ android {
     }
     sourceSets {
         main {
-            java.srcDirs = ['src/main/java', 'src/main/java/com.yliu240.painbutton', 'src/main/java/com.yliu240.painbutton/Model']
+            java.srcDirs = ['src/main/java', 'src/main/java/com.yliu240.mobslayer', 'src/main/java/com.yliu240.mobslayer/Model']
         }
     }
 

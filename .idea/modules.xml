@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/PainButton.iml" filepath="$PROJECT_DIR$/PainButton.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MobSlayer.iml" filepath="$PROJECT_DIR$/MobSlayer.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

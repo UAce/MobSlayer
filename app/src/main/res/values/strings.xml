@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PainButton</string>
+    <string name="app_name">MobSlayer</string>
     <!--<string name="lv"></string>-->
     <string name="level">1</string>
     <string name="expLabel">EXP</string>

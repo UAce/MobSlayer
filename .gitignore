@@ -7,3 +7,12 @@
 /build
 /captures
 .externalNativeBuild
+
+# Ignore sprites and other images
+app/src/main/res/drawable
+
+# Ignore soundtracks
+app/src/main/res/raw
+
+# Ignore game data
+app/src/main/assets
