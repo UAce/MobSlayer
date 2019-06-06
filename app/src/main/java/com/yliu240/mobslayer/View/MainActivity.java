@@ -1,5 +1,6 @@
 package com.yliu240.mobslayer.View;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -10,6 +11,7 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,6 +19,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -32,6 +35,9 @@ import org.javatuples.Pair;
 import pl.droidsonroids.gif.AnimationListener;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -41,6 +47,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import com.google.gson.Gson;
 
+import com.google.gson.GsonBuilder;
 import com.yliu240.mobslayer.Controller.GameController;
 import com.yliu240.mobslayer.R;
 
@@ -48,15 +55,17 @@ public class MainActivity extends AppCompatActivity {
 
     private int dmgTop, dmgBottom, critTop, critBottom, offsetX, offsetY;
     private ProgressBar HpBar, ExpBar;
-    private Boolean isAlive, hit, sound_clicked;
+    private Boolean isAlive = false, hit, sound_muted;
     private ImageButton sound, right_arrow, left_arrow, skill_0 = null;
-    private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound, sharp_eyes_effect, level_up_effect;
+    private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound, sharp_eyes_effect, levelUp;
     private MediaPlayer bgm;
-    private ImageView screenInFrontOfMob;
+    private ImageView screenInFrontOfMob, mapView;
+
+    // Get TextViews
     private TextView mobHP_text, level_text, exp_val_text, exp_percent_text;
     private GifImageView mobView, buffView, levelUpView;
     private GifDrawable mob_drawable, buff_drawable, levelUp_drawable;
-    private AnimationListener mob_death, mob_move, buff_effect, levelUp_effect;
+    private AnimationListener mobDeath, mob_move, buff_effect, levelUp_effect;
     private FrameLayout FL;
     private FrameLayout.LayoutParams FL_lp, FL_lp_lvlup;
     private RelativeLayout RL, RL_hp;
@@ -77,11 +86,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (savedInstanceState != null) {
+            isAlive = savedInstanceState.getBoolean("isAlive");
+        }
         mContext = getApplicationContext();
 
         // Variables for Layouts, Views
-        screenInFrontOfMob = (ImageView) findViewById(R.id.transparent);
-        FL = (FrameLayout) findViewById(R.id.framelayout);
+        screenInFrontOfMob = findViewById(R.id.transparent);
+        mobHP_text = findViewById(R.id.hp);
+        mapView = findViewById(R.id.mapView);
+        FL = findViewById(R.id.framelayout);
         FL_lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 FrameLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
@@ -90,8 +104,8 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 FrameLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
         FL_lp_lvlup.gravity = Gravity.BOTTOM;
-        RL = (RelativeLayout) findViewById(R.id.relayout);
-        RL_hp = (RelativeLayout) findViewById(R.id.relayout_hp);
+        RL = findViewById(R.id.relayout);
+        RL_hp = findViewById(R.id.relayout_hp);
         RL_lp = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
                 RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
@@ -109,18 +123,18 @@ public class MainActivity extends AppCompatActivity {
 
 
         // Buttons
-        sound = (ImageButton) findViewById(R.id.sound);
-        left_arrow = (ImageButton) findViewById(R.id.left_arrow);
-        right_arrow = (ImageButton) findViewById(R.id.right_arrow);
-        sound_clicked = Boolean.valueOf(false);
+        sound = findViewById(R.id.sound);
+        left_arrow = findViewById(R.id.left_arrow);
+        right_arrow = findViewById(R.id.right_arrow);
+        sound_muted = Boolean.FALSE;
 
         // Variable for Buff effect and Skill buttons
         buffView = new GifImageView(mContext); // Could be refactored in SetGameProperties()
         buffView.setLayoutParams(RL_lp_buff);
         buffView.setImageResource(R.drawable.no_buff);
         RL.addView(buffView, 1);
-        skill_0 = (ImageButton) findViewById(R.id.skill_0);
-        skill_Listener("sharp_eyes");
+        skill_0 = findViewById(R.id.skill_0);
+        setSkillListener("sharp_eyes");
         levelUpView = new GifImageView(mContext); // Needs refactoring
         levelUpView.setLayoutParams(FL_lp_lvlup);
         levelUpView.setImageResource(R.drawable.no_buff);
@@ -134,43 +148,56 @@ public class MainActivity extends AppCompatActivity {
         comic_sans = Typeface.createFromAsset(getAssets(), "comic-sans-ms-bold.ttf");
 
         // Variables for HP bar, EXP bar and set values
-        HpBar = (ProgressBar) findViewById(R.id.HpBar);
-        ExpBar = (ProgressBar) findViewById(R.id.ExpBar);
+        HpBar = findViewById(R.id.HpBar);
+        ExpBar = findViewById(R.id.ExpBar);
         Drawable exp_drawable = ContextCompat.getDrawable(mContext, R.drawable.expbar_drawable);;
         ExpBar.setProgressDrawable(exp_drawable);
 
-        // Get TextViews
-        mobHP_text = (TextView) findViewById(R.id.hp);
-        level_text = (TextView) findViewById(R.id.level);
-        exp_val_text = (TextView) findViewById(R.id.Exp_val);
-        exp_percent_text = (TextView) findViewById(R.id.Exp_percent);
+        level_text = findViewById(R.id.level);
+        exp_val_text = findViewById(R.id.Exp_val);
+        exp_percent_text = findViewById(R.id.Exp_percent);
 
         // Set TextViews
         mobHP_text.setTypeface(comic_sans);
         setGameProperties();
     }
 
-    // Parse gameInfo.json file and set gameController instance
-    private void loadJson() {
-        Gson gson = new Gson();
-        AssetManager assetManager = getAssets();
+    // Parse currentGameInfo.json file and set gameController instance
+//    private void loadJson() {
+//        Gson gson = new Gson();
+//        AssetManager assetManager = getAssets();
+//        try {
+//            InputStream ims = assetManager.open("currentGameInfo.json");
+//            Reader reader = new InputStreamReader(ims);
+//            GameController instance = gson.fromJson(reader, GameController.class);
+//            GameController.setInstance(instance);
+//            gcInstance = GameController.getInstance();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    private void saveJson() {
+        GsonBuilder builder = new GsonBuilder();
+        builder.setPrettyPrinting().serializeNulls();
+        Gson gson = builder.create();
+        String newGameInfo = gson.toJson(gcInstance);
+        FileOutputStream outputStream;
         try {
-            InputStream ims = assetManager.open("gameInfo.json");
-            Reader reader = new InputStreamReader(ims);
-            GameController instance = gson.fromJson(reader, GameController.class);
-            GameController.setInstance(instance);
-            gcInstance = GameController.getInstance();
-        } catch (IOException e) {
+            outputStream = openFileOutput("currentGameInfo.json", Context.MODE_PRIVATE);
+            outputStream.write(newGameInfo.getBytes());
+            outputStream.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void setGameProperties() {
-        loadJson();
+        gcInstance = GameController.getInstance();
 
         // Set Map properties
         gcInstance.setCurrent_map();
-        FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+        mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
         createBgm();
 
         // Set Mob Properties
@@ -190,23 +217,30 @@ public class MainActivity extends AppCompatActivity {
 
         // Create Mob
         mobHP_text.setText(gcInstance.getCurrent_mob().getHP_percent_string());
-        mobView= new GifImageView(mContext);
+        mobView = new GifImageView(mContext);
         mobView.setLayoutParams(FL_lp);
-        mobView.setImageResource(R.drawable.no_mob);
-        FL.addView(mobView, 0);
-        wait_to_spawn();
+        if(isAlive){
+            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
+            FL.addView(mobView, 0);
+            hit = false;
+            startAttackListener();
+        }else{
+            mobView.setImageResource(R.drawable.no_mob);
+            FL.addView(mobView, 0);
+            waitToSpawn();
+        }
+        mobView.setElevation(1);
     }
 
 
     @Override
     protected void onStart() {
         super.onStart();
-//        setGameProperties();
         //Listens to sound Button if pressed
         startBgmListener();
         startArrowListener();
-        if(sound_clicked){
-            bgmCtrl("pause");
+        if(sound_muted){
+            bgm.pause();
         }
     }
 
@@ -214,8 +248,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        bgmCtrl("pause");
+        bgm.pause();
         sound.setOnClickListener(null);
+        saveJson();
         System.gc();
     }
 
@@ -223,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-        bgmCtrl("stop");
+        bgm.pause();
         sound.setOnClickListener(null);
         System.gc();
     }
@@ -234,97 +269,103 @@ public class MainActivity extends AppCompatActivity {
 
         gcInstance = GameController.getInstance();
         startBgmListener();
-        if(!sound_clicked){
-           bgmCtrl("start");
+        if(!sound_muted){
+           bgm.start();
         }
+    }
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean("isAlive", true);
+        outState.putInt("position", bgm.getCurrentPosition());
+        bgm.pause();
+        super.onSaveInstanceState(outState);
+    }
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        isAlive = savedInstanceState.getBoolean("isAlive");
+        int pos = savedInstanceState.getInt("position");
+        bgm.seekTo(pos);
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     /*
      * Sound Functions
      */
-    private void play_Sound_Effect(Pair<SoundPool, Integer> sfx) {
+    /**
+     * Plays the sound effect
+     * @param sfx Pair<SoundPool, Integer> of a sound effect
+     */
+    private void playSoundEffect(Pair<SoundPool, Integer> sfx) {
         sfx.getValue0().play(sfx.getValue1(), 1.0F, 1.0F, 0, 0, 1.0F);
     }
 
-    private Pair<SoundPool, Integer> load_Sound(String name) {
-        int soundId = getDrawableId(name, RAW);
-
+    /**
+     *  Creates a SoundPool object for sound effect
+     * @param name Name of sound effect
+     * @return Returns a Pair<SoundPool, Integer> of the sound effect
+     */
+    private Pair<SoundPool, Integer> loadSound(String name) {
+        int soundId = getResourceId(name, RAW);
         SoundPool soundPool;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             soundPool = (new SoundPool.Builder()).setMaxStreams(2).build();
         } else {
             soundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 5);
         }
         //Load the sound
         int sound_val = soundPool.load(mContext, soundId, 1);
-        Pair<SoundPool, Integer> sfx = new Pair<>(soundPool, sound_val);
-
-        return sfx;
+        return new Pair<>(soundPool, sound_val);
     }
+
     public void createBgm(){
         if (bgm != null){
-            bgmCtrl("stop");
+            bgm.pause();
         }
-        bgm = MediaPlayer.create(mContext, getDrawableId(gcInstance.getCurrent_map().getBgm_name(), "raw"));
+        bgm = MediaPlayer.create(mContext, getResourceId(gcInstance.getCurrent_map().getBgm_name(), "raw"));
         bgm.setLooping(true);
-        if(sound_clicked){
+        if(sound_muted){
             return;
         }
-        bgmCtrl("start");
-    }
-
-    public void bgmCtrl(String action){
-        switch (action){
-            case "stop":
-                bgm.stop();
-                break;
-            case "pause":
-                bgm.pause();
-                break;
-            case "start":
-                bgm.start();
-                break;
-            default:
-                bgm.stop();
-                break;
-        }
+        bgm.start();
     }
 
     private void setMobSoundAndOffsets(){
-        hit_sound = load_Sound(gcInstance.getCurrent_mob().getHit_sound());
-        death_sound = load_Sound(gcInstance.getCurrent_mob().getDeath_sound());
-        spawn_sound = load_Sound(gcInstance.getCurrent_mob().getSpawn_sound());
+        hit_sound = loadSound(gcInstance.getCurrent_mob().getHit_sound());
+        death_sound = loadSound(gcInstance.getCurrent_mob().getDeath_sound());
+        spawn_sound = loadSound(gcInstance.getCurrent_mob().getSpawn_sound());
         offsetX = gcInstance.getCurrent_mob().getOffsetX();
         offsetY = gcInstance.getCurrent_mob().getOffsetY();
-        sharp_eyes_effect = load_Sound("sharp_eyes_effect"); //This is temporary
-        level_up_effect = load_Sound("level_up_effect"); //This is temporary
+        sharp_eyes_effect = loadSound("sharp_eyes_effect"); //This is temporary
+        levelUp = loadSound("level_up_effect"); //This is temporary
     }
 
     private void setBuffSound(){
-        sharp_eyes_effect = load_Sound("sharp_eyes_effect");
+        sharp_eyes_effect = loadSound("sharp_eyes_effect");
     }
 
 
     //Listeners
-    private void skill_Listener(final String skill_name){
+    private void setSkillListener(final String skill_name){
         skill_0.setOnTouchListener(new View.OnTouchListener() {
 
+            @SuppressLint("ClickableViewAccessibility")
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN: {
                         if(!gcInstance.getPlayer().getBuffed()){
-                            play_Sound_Effect(sharp_eyes_effect);
-                            skill_0.setBackgroundResource(getDrawableId(skill_name+"_disable", DRAW));
+                            playSoundEffect(sharp_eyes_effect);
+                            skill_0.setBackgroundResource(getResourceId(skill_name+"_disable", DRAW));
                             skill_0.invalidate();
                             RL.removeView(buffView);
-                            buffView.setImageResource(getDrawableId(skill_name, DRAW));
+                            buffView.setImageResource(getResourceId(skill_name, DRAW));
                             RL.addView(buffView, 1);
                             buff_drawable = (GifDrawable) buffView.getDrawable();
                             buff_drawable.setLoopCount(1);
                             buff_effect = new AnimationListener() {
                                 @Override
                                 public void onAnimationCompleted(int loopNumber) {
-                                    buffView.setImageResource(getDrawableId("no_buff", DRAW));
+                                    buffView.setImageResource(getResourceId("no_buff", DRAW));
                                 }
                             };
                             buff_drawable.removeAnimationListener(buff_effect);
@@ -334,6 +375,7 @@ public class MainActivity extends AppCompatActivity {
                             gcInstance.getPlayer().setBuffed();
                             coolDown(skill_name);
                         }
+                        //TODO: Inspect bug when player is already buffed
                         break;
                     }
                     case MotionEvent.ACTION_UP: {
@@ -352,7 +394,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        skill_0.setBackgroundResource(getDrawableId(skill_name+"_enable", DRAW));
+                        skill_0.setBackgroundResource(getResourceId(skill_name+"_enable", DRAW));
                         skill_0.invalidate();
                     }
                 });
@@ -361,20 +403,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startBgmListener() {
-        if(sound_clicked){
-            bgmCtrl("start");
-        }
         sound.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!sound_clicked) {
+                if (!sound_muted) {
                     sound.setImageResource(R.drawable.baseline_volume_off_24);
-                    bgmCtrl("pause");
-                    sound_clicked=true;
+                    bgm.pause();
+                    sound_muted=true;
                 } else {
                     sound.setImageResource(R.drawable.baseline_volume_up_24);
-                    bgmCtrl("start");
-                    sound_clicked=false;
+                    bgm.start();
+                    sound_muted=false;
                 }
             }
         });
@@ -387,7 +426,7 @@ public class MainActivity extends AppCompatActivity {
                 gcInstance.switch_map(false);
 //                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
 //                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
@@ -397,7 +436,7 @@ public class MainActivity extends AppCompatActivity {
                 gcInstance.switch_map(true);
 //                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
 //                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                FL.setBackgroundResource(getDrawableId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
@@ -406,6 +445,7 @@ public class MainActivity extends AppCompatActivity {
     /*
      * Mob Functions
      */
+    @SuppressLint("ClickableViewAccessibility")
     private void startAttackListener() {
 
         screenInFrontOfMob.setOnTouchListener(new View.OnTouchListener() {
@@ -418,10 +458,10 @@ public class MainActivity extends AppCompatActivity {
                         if (gcInstance.getCurrent_mob().isDead()) {
                             break;
                         }
-                        play_Sound_Effect(hit_sound);
+                        playSoundEffect(hit_sound);
 
                         // Generate random Damage and create damage Text
-                        Pair<Integer, Boolean> damage = new Pair<>(0,false);
+                        Pair<Integer, Boolean> damage = new Pair<>(0, false);
                         int x = (int) event.getRawX() + offsetX; //Hardcoded adjustment for mob position
                         int y = (int) event.getRawY() + offsetY;
 
@@ -429,9 +469,9 @@ public class MainActivity extends AppCompatActivity {
                             damage = gcInstance.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                         }
 
-                        if (!createDamageText(pad_damage(damage.getValue0()),damage.getValue1()).equals(MISS)) {
+                        if (!createDamageText(padDamageText(damage.getValue0()),damage.getValue1()).equals(MISS)) {
                             FL.removeView(mobView);
-                            mobView.setImageResource(getDrawableId(gcInstance.getCurrent_mob().getHit(), DRAW));
+                            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getHit(), DRAW));
                             FL.addView(mobView, 0);
                             hit = true;
                         }
@@ -445,7 +485,7 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         } else if (hit) {
                             FL.removeView(mobView);
-                            mobView.setImageResource(getDrawableId(gcInstance.getCurrent_mob().getMove(), DRAW));
+                            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
                             FL.addView(mobView, 0);
                             hit = false;
                         }
@@ -457,6 +497,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void updateHP() {
         if (gcInstance.getCurrent_mob().getCurrent_hp() == 0){
             screenInFrontOfMob.setOnTouchListener(null);
@@ -465,7 +506,7 @@ public class MainActivity extends AppCompatActivity {
             lC.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mob_death();
+                    mobDeath();
                 }
             });
         }
@@ -526,11 +567,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Position damageText to Click position
         damageText.measure(0,0);
-        damageText.setX((FL.getWidth()/2) - (damageText.getMeasuredWidth()/2));
-        damageText.setY((FL.getHeight()/2) - (damageText.getMeasuredHeight()));
+        damageText.setX((int)(FL.getWidth()/2) - (int)(damageText.getMeasuredWidth()/2));
+        damageText.setY((int)(FL.getHeight()/2) - (damageText.getMeasuredHeight()));
 
         RL.addView(damageText);
-        damageText.animate().translationYBy(-400).alpha(0.5f).setDuration(1000).withEndAction(new Runnable() {
+        damageText.animate().translationYBy(-400).alpha(0.2f).setDuration(1000).withEndAction(new Runnable() {
             public void run() {
                 // Remove the view from the parent layout
                 RL.removeView(damageText);
@@ -539,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
         return damage;
     }
 
-    private String pad_damage(int dmg) {
+    private String padDamageText(int dmg) {
         if (dmg == 0) {
             return MISS;
         }
@@ -573,22 +614,22 @@ public class MainActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    private void mob_death() {
-        play_Sound_Effect(death_sound);
-        mobView.setImageResource(getDrawableId(gcInstance.getCurrent_mob().getDeath(), DRAW));
+    private void mobDeath() {
+        playSoundEffect(death_sound);
+        mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getDeath(), DRAW));
         mob_drawable = (GifDrawable) mobView.getDrawable();
         mob_drawable.setLoopCount(1);
-        mob_death = new AnimationListener() {
+        mobDeath = new AnimationListener() {
             @Override
             public void onAnimationCompleted(int loopNumber) {
-                mobView.setImageResource(getDrawableId("no_mob", DRAW));
+                mobView.setImageResource(getResourceId("no_mob", DRAW));
             }
 
         };
         mob_drawable.removeAnimationListener(mob_move);
-        mob_drawable.addAnimationListener(mob_death);
+        mob_drawable.addAnimationListener(mobDeath);
         updateExp();
-        wait_to_spawn();
+        waitToSpawn();
     }
 
     private void updateExp() {
@@ -605,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
         });
         Boolean level_Up = gcInstance.gainEXP();
         if(level_Up){
-            level_up_effect();
+            levelUp();
             ExpBar.setMax(gcInstance.getPlayer().getTotal_exp());
             level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gcInstance.getPlayer().getLevel()));
         }
@@ -614,23 +655,23 @@ public class MainActivity extends AppCompatActivity {
         exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gcInstance.getPlayer().getEXP_percent()));
     }
 
-    private void level_up_effect(){
-        play_Sound_Effect(level_up_effect);
+    private void levelUp(){
+        playSoundEffect(levelUp);
         RL.removeView(buffView);
-        buffView.setImageResource(getDrawableId("level_up", DRAW));
+        buffView.setImageResource(getResourceId("level_up", DRAW));
         RL.addView(buffView, 1);
         buff_drawable = (GifDrawable) buffView.getDrawable();
         buff_drawable.setLoopCount(1);
         buff_effect = new AnimationListener() {
             @Override
             public void onAnimationCompleted(int loopNumber) {
-                buffView.setImageResource(getDrawableId("no_buff", DRAW));
+                buffView.setImageResource(getResourceId("no_buff", DRAW));
             }
         };
         buff_drawable.removeAnimationListener(buff_effect);
         buff_drawable.addAnimationListener(buff_effect);
 //        FL.removeView(levelUpView);
-//        levelUpView.setImageResource(getDrawableId("level_up", DRAW));
+//        levelUpView.setImageResource(getResourceId("level_up", DRAW));
 //        FL.addView(levelUpView, 1);
 //        levelUpView.bringToFront();
 //        levelUp_drawable = (GifDrawable) levelUpView.getDrawable();
@@ -638,13 +679,13 @@ public class MainActivity extends AppCompatActivity {
 //        levelUp_effect = new AnimationListener() {
 //            @Override
 //            public void onAnimationCompleted(int loopNumber) {
-//                levelUpView.setImageResource(getDrawableId("no_buff", DRAW));
+//                levelUpView.setImageResource(getResourceId("no_buff", DRAW));
 //            }
 //        };
 //        levelUp_drawable.removeAnimationListener(levelUp_effect);
 //        levelUp_drawable.addAnimationListener(levelUp_effect);
     }
-    private void wait_to_spawn() {
+    private void waitToSpawn() {
 //        int spawnTime = ThreadLocalRandom.current().nextInt(1500, 2000 + 1);
 
         new Timer().schedule(new TimerTask() {
@@ -656,29 +697,30 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
 //                        Toast.makeText(mContext, String.format(Locale.CANADA, "A wild %s has appeared!",
 //                                gcInstance.getCurrent_mob().getName()), Toast.LENGTH_SHORT).show();
-                        spawn_mob();
+                        spawnMob();
                     }
                 });
             }
         }, 2500);
     }
 
-    private void spawn_mob() {
+    private void spawnMob() {
         gcInstance.getCurrent_mob().resetHP();
-        play_Sound_Effect(spawn_sound);
-        mobView.setImageResource(getDrawableId(gcInstance.getCurrent_mob().getSpawn(), DRAW));
+        playSoundEffect(spawn_sound);
+        mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getSpawn(), DRAW));
         mob_drawable = (GifDrawable) mobView.getDrawable();
         mob_drawable.setLoopCount(1);
         mob_move = new AnimationListener() {
             @Override
             public void onAnimationCompleted(int loopNumber) {
-                mobView.setImageResource(getDrawableId(gcInstance.getCurrent_mob().getMove(), DRAW));
+                mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
             }
         };
-        mob_drawable.removeAnimationListener(mob_death);
+        mob_drawable.removeAnimationListener(mobDeath);
         mob_drawable.addAnimationListener(mob_move);
 
-        isAlive = true;//Listens to screen being pressed
+        isAlive = true;
+        //Listens to screen being pressed
         hit = false;
         startAttackListener();
     }
@@ -686,13 +728,26 @@ public class MainActivity extends AppCompatActivity {
     /*
      * Helper functions
      */
-    // Check whether player click is on the monster
+    //
+
+    /**
+     * Check whether the clicked position is on the monster or not
+     * @param x x-coordinate
+     * @param y y-coordinate
+     * @return Returns a boolean of whether the clicked point is on the monster or not
+     */
     private Boolean inRange(int x, int y) {
         return (x > (FL.getWidth() / 2) - (mobView.getWidth() / 3) && x < (FL.getWidth() / 2) + (mobView.getWidth() / 3))
                 && (y > (FL.getHeight() / 2) - (mobView.getHeight() / 3) && y < (FL.getHeight() / 2) + (mobView.getHeight() / 3));
     }
 
-    private int getDrawableId(String name, String type){
+    /**
+     * Gets the resource Id
+     * @param name Name of resource
+     * @param type Type of resource (e.g. drawable, raw)
+     * @return Returns id of resource
+     */
+    private int getResourceId(String name, String type){
         return getResources().getIdentifier(name, type, getPackageName());
     }
 }

@@ -3,4 +3,6 @@
     <!--<string name="lv"></string>-->
     <string name="level">1</string>
     <string name="expLabel">EXP</string>
+    <string name="load_game">Load Game</string>
+    <string name="new_game">New Game</string>
 </resources>
