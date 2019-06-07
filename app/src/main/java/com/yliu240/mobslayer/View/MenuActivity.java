@@ -14,27 +14,24 @@ import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import com.google.gson.Gson;
-import com.yliu240.mobslayer.Controller.GameController;
-import com.yliu240.mobslayer.R;
-
 import org.javatuples.Pair;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import com.google.gson.Gson;
+
+import com.yliu240.mobslayer.Controller.GameController;
+import com.yliu240.mobslayer.R;
 
 public class MenuActivity extends AppCompatActivity {
 
@@ -79,7 +76,6 @@ public class MenuActivity extends AppCompatActivity {
         // Set menu buttons
         new_game = findViewById(R.id.new_game);
         load_game = findViewById(R.id.load_game);
-        setListeners();
     }
 
     private void startTransition(){
@@ -106,7 +102,6 @@ public class MenuActivity extends AppCompatActivity {
                             android.R.anim.fade_in, android.R.anim.fade_out).toBundle();
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     startActivity(intent, bundle);
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     finish();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -144,6 +139,7 @@ public class MenuActivity extends AppCompatActivity {
         super.onResume();
         gcInstance = GameController.getInstance();
         startBgmListener();
+        setListeners();
         if(!sound_muted){
             bgm.start();
         }
@@ -151,16 +147,20 @@ public class MenuActivity extends AppCompatActivity {
 
     // Parse currentGameInfo.json file and set gameController instance
     private void loadJson(Boolean loadGame) {
+//        Log.d("[DEBUG] @@@@@@@@@@@:", "Pressed..");
         playSoundEffect(button_pressed);
         Gson gson = new Gson();
         InputStream ims;
         try {
             if(loadGame && fileExists(mContext, "currentGameInfo.json")){
+//                Log.d("[DEBUG] @@@@@@@@@@@:", "Trying to load game");
                 ims = openFileInput("currentGameInfo.json");
             }else if(!loadGame){
+//                Log.d("[DEBUG] @@@@@@@@@@@:", "Trying to create new game");
                 AssetManager assetManager = getAssets();
                 ims = assetManager.open("newGameInfo.json");
             }else{
+//                Log.d("[DEBUG] @@@@@@@@@@@:", "Failed to start game");
                 // Display Error message?
                 setListeners();
                 return;

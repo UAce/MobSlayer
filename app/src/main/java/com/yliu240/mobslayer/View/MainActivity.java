@@ -3,7 +3,6 @@ package com.yliu240.mobslayer.View;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
@@ -19,7 +18,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -35,20 +33,17 @@ import org.javatuples.Pair;
 import pl.droidsonroids.gif.AnimationListener;
 import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
-
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
-
 import com.google.gson.GsonBuilder;
+
 import com.yliu240.mobslayer.Controller.GameController;
+import com.yliu240.mobslayer.Model.Player;
 import com.yliu240.mobslayer.R;
 
 public class MainActivity extends AppCompatActivity {
@@ -74,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private GameController gcInstance;
     private Context mContext;
     private final int DAMAGE_SIZE = 60;
-    private static final String TAG = "@@@@@@@@@@@@@@@DEBUG ";
+    private static final String DEBUG = "[DEBUG] @@@@@@@@@@@:";
     private static final String MISS = "  MISS  ";
     private static final String LV = "LV. ";
     private static final String RAW = "raw";
@@ -88,9 +83,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             isAlive = savedInstanceState.getBoolean("isAlive");
-            int pos = savedInstanceState.getInt("position");
-            bgm.seekTo(pos);
         }
+
         mContext = getApplicationContext();
 
         // Variables for Layouts, Views
@@ -161,28 +155,24 @@ public class MainActivity extends AppCompatActivity {
 
         // Set TextViews
         mobHP_text.setTypeface(comic_sans);
+
         setGameProperties();
     }
 
-    // Parse currentGameInfo.json file and set gameController instance
-//    private void loadJson() {
-//        Gson gson = new Gson();
-//        AssetManager assetManager = getAssets();
-//        try {
-//            InputStream ims = assetManager.open("currentGameInfo.json");
-//            Reader reader = new InputStreamReader(ims);
-//            GameController instance = gson.fromJson(reader, GameController.class);
-//            GameController.setInstance(instance);
-//            gcInstance = GameController.getInstance();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     private void saveJson() {
+        ExclusionStrategy strategy = new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes field) {
+                return field.getDeclaringClass() == Player.class && field.getName().equals("buffed");
+            }
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        };
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting().serializeNulls();
-        Gson gson = builder.create();
+        Gson gson = builder.addSerializationExclusionStrategy(strategy).create();
         String newGameInfo = gson.toJson(gcInstance);
         FileOutputStream outputStream;
         try {
@@ -262,6 +252,7 @@ public class MainActivity extends AppCompatActivity {
 
         bgm.pause();
         sound.setOnClickListener(null);
+        saveJson();
         System.gc();
     }
 
@@ -281,6 +272,12 @@ public class MainActivity extends AppCompatActivity {
         outState.putInt("position", bgm.getCurrentPosition());
         bgm.pause();
         super.onSaveInstanceState(outState);
+    }
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        int pos = savedInstanceState.getInt("position");
+        bgm.seekTo(pos);
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     /*
@@ -367,10 +364,9 @@ public class MainActivity extends AppCompatActivity {
                             buff_drawable.addAnimationListener(buff_effect);
 
                             createDamageText("+50% Crit", true);
-                            gcInstance.getPlayer().setBuffed();
+                            gcInstance.getPlayer().setBuffedCoolDown();
                             coolDown(skill_name);
                         }
-                        //TODO: Inspect bug when player is already buffed
                         break;
                     }
                     case MotionEvent.ACTION_UP: {
@@ -419,8 +415,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 gcInstance.switch_map(false);
-//                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
-//                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
+//                Log.d(DEBUG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
+//                Log.d(DEBUG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
                 mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
@@ -429,8 +425,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 gcInstance.switch_map(true);
-//                Log.d(TAG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
-//                Log.d(TAG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
+//                Log.d(DEBUG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
+//                Log.d(DEBUG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
                 mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }

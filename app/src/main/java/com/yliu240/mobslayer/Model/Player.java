@@ -1,7 +1,5 @@
 package com.yliu240.mobslayer.Model;
 
-import com.google.gson.annotations.Expose;
-
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -16,7 +14,6 @@ public class Player {
     private double attack;
     private double attack_multiplier;
     private double critical_rate;
-    @Expose(serialize = false, deserialize = false)
     private Boolean buffed=false;
 
     private static Player playerInstance;
@@ -78,7 +75,7 @@ public class Player {
     public void setCritical_rate(double critical_rate){
         this.critical_rate = critical_rate;
     }
-    public void setBuffed(){
+    public void setBuffedCoolDown(){
         if(!this.buffed) {
             this.buffed = true;
             new Timer().schedule(new TimerTask() {
