@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             isAlive = savedInstanceState.getBoolean("isAlive");
+            int pos = savedInstanceState.getInt("position");
+            bgm.seekTo(pos);
         }
         mContext = getApplicationContext();
 
@@ -279,13 +281,6 @@ public class MainActivity extends AppCompatActivity {
         outState.putInt("position", bgm.getCurrentPosition());
         bgm.pause();
         super.onSaveInstanceState(outState);
-    }
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        isAlive = savedInstanceState.getBoolean("isAlive");
-        int pos = savedInstanceState.getInt("position");
-        bgm.seekTo(pos);
-        super.onRestoreInstanceState(savedInstanceState);
     }
 
     /*

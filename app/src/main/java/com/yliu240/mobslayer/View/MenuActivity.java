@@ -30,6 +30,7 @@ import com.yliu240.mobslayer.R;
 
 import org.javatuples.Pair;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -77,26 +78,11 @@ public class MenuActivity extends AppCompatActivity {
 
         // Set menu buttons
         new_game = findViewById(R.id.new_game);
-        new_game.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //TODO: Overwrite currentGameInfo.json with newGameInfo.json
-                loadJson(false);
-                startTransition();
-            }
-        });
         load_game = findViewById(R.id.load_game);
-        load_game.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadJson(true);
-                startTransition();
-            }
-        });
+        setListeners();
     }
 
     private void startTransition(){
-        playSoundEffect(button_pressed);
         Animation fade_out = AnimationUtils.loadAnimation(mContext, R.anim.fade_out);
         fade_out.setAnimationListener(new Animation.AnimationListener(){
             @Override
@@ -142,6 +128,7 @@ public class MenuActivity extends AppCompatActivity {
         super.onPause();
         bgm.pause();
         sound.setOnClickListener(null);
+        clearListeners();
         System.gc();
     }
     @Override
@@ -149,8 +136,7 @@ public class MenuActivity extends AppCompatActivity {
         super.onDestroy();
         bgm.stop();
         sound.setOnClickListener(null);
-        new_game.setOnClickListener(null);
-        load_game.setOnClickListener(null);
+        clearListeners();
         System.gc();
     }
     @Override
@@ -165,19 +151,25 @@ public class MenuActivity extends AppCompatActivity {
 
     // Parse currentGameInfo.json file and set gameController instance
     private void loadJson(Boolean loadGame) {
+        playSoundEffect(button_pressed);
         Gson gson = new Gson();
         InputStream ims;
         try {
-            if(loadGame){
+            if(loadGame && fileExists(mContext, "currentGameInfo.json")){
                 ims = openFileInput("currentGameInfo.json");
-            }else{
+            }else if(!loadGame){
                 AssetManager assetManager = getAssets();
                 ims = assetManager.open("newGameInfo.json");
+            }else{
+                // Display Error message?
+                setListeners();
+                return;
             }
             Reader reader = new InputStreamReader(ims);
             GameController instance = gson.fromJson(reader, GameController.class);
             GameController.setInstance(instance);
             gcInstance = GameController.getInstance();
+            startTransition();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -253,5 +245,33 @@ public class MenuActivity extends AppCompatActivity {
      */
     private int getResourceId(String name, String type){
         return getResources().getIdentifier(name, type, getPackageName());
+    }
+
+    private boolean fileExists(Context context, String filename) {
+        File file = context.getFileStreamPath(filename);
+        if(file == null || !file.exists()) {
+            return false;
+        }
+        return true;
+    }
+
+    private void startClickListener(ImageButton ib, final Boolean loadGame){
+        ib.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearListeners();
+                loadJson(loadGame);
+            }
+        });
+    }
+
+    private void setListeners(){
+        startClickListener(new_game, false);
+        startClickListener(load_game, true);
+    }
+
+    private void clearListeners(){
+        new_game.setOnClickListener(null);
+        load_game.setOnClickListener(null);
     }
 }
