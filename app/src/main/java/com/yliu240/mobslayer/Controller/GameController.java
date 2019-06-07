@@ -92,11 +92,13 @@ public class GameController {
         this.current_mapId = idx;
     }
     public void setCurrent_mob(int idx){
+        //TODO: find a way to level up monster when player levels up
+        int multiplier = getPlayer().getLevel();
         Mob new_mob = mobs.get(idx);
         this.current_mob.setName(new_mob.getName());
-        this.current_mob.setTotal_hp(new_mob.getTotal_hp());
-        this.current_mob.setCurrent_hp(new_mob.getCurrent_hp());
-        this.current_mob.setExp(new_mob.getExp());
+        this.current_mob.setTotal_hp(new_mob.getTotal_hp()*multiplier);
+        this.current_mob.setCurrent_hp(new_mob.getCurrent_hp()*multiplier);
+        this.current_mob.setExp(new_mob.getExp()*multiplier);
         this.current_mob.setOffsetX(new_mob.getOffsetX());
         this.current_mob.setOffsetY(new_mob.getOffsetY());
         this.current_mob.setMove(new_mob.getMove());

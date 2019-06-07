@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
+    android:id="@+id/splashScreen"
     tools:context="com.yliu240.mobslayer.View.SplashScreenActivity">
 
     <ImageView

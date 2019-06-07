@@ -661,6 +661,7 @@ public class MainActivity extends AppCompatActivity {
         };
         buff_drawable.removeAnimationListener(buff_effect);
         buff_drawable.addAnimationListener(buff_effect);
+        gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
 //        FL.removeView(levelUpView);
 //        levelUpView.setImageResource(getResourceId("level_up", DRAW));
 //        FL.addView(levelUpView, 1);
@@ -692,7 +693,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
-        }, 2500);
+        }, 1000);
     }
 
     private void spawnMob() {
@@ -705,15 +706,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAnimationCompleted(int loopNumber) {
                 mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
+                isAlive = true;
+                //Listens to screen being pressed
+                hit = false;
+                startAttackListener();
             }
         };
         mob_drawable.removeAnimationListener(mobDeath);
         mob_drawable.addAnimationListener(mob_move);
-
-        isAlive = true;
-        //Listens to screen being pressed
-        hit = false;
-        startAttackListener();
     }
 
     /*
