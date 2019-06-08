@@ -31,7 +31,7 @@ import java.io.Reader;
 import com.google.gson.Gson;
 
 import com.yliu240.mobslayer.Controller.GameController;
-import com.yliu240.mobslayer.R;
+import com.yliu240.mobslayer.View.R;
 
 public class MenuActivity extends AppCompatActivity {
 

@@ -13,7 +13,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.yliu240.mobslayer.R;
+import com.yliu240.mobslayer.View.R;
 
 public class SplashScreenActivity extends AppCompatActivity {
 

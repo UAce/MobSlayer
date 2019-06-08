@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.LinearGradient;
+import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -44,7 +45,7 @@ import com.google.gson.GsonBuilder;
 
 import com.yliu240.mobslayer.Controller.GameController;
 import com.yliu240.mobslayer.Model.Player;
-import com.yliu240.mobslayer.R;
+import com.yliu240.mobslayer.View.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -453,19 +454,24 @@ public class MainActivity extends AppCompatActivity {
 
                         // Generate random Damage and create damage Text
                         Pair<Integer, Boolean> damage = new Pair<>(0, false);
-                        int x = (int) event.getRawX() + offsetX; //Hardcoded adjustment for mob position
-                        int y = (int) event.getRawY() + offsetY;
+                        int x = (int) event.getX();
+                        int y = (int) event.getY();
+                        String lineSeparator = System.getProperty("line.separator");
+                        Log.d(DEBUG, String.format("Touched Position - x: %s, y: %s ",  x, y));
 
-                        if (inRange(x, y)) {
+                        Rect mob_position = getLocationOnScreen(mobView);
+                        Log.d(DEBUG, String.format("Mob Position - %d, %d | %d, %d ",  mob_position.top, mob_position.bottom, mob_position.left,  mob_position.right));
+                        Log.d(DEBUG, String.format("Is in range: %s %s ", String.valueOf(mob_position.contains(x,y)), lineSeparator));
+
+                        if (mob_position.contains(x,y)) {
                             damage = gcInstance.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
-                        }
-
-                        if (!createDamageText(padDamageText(damage.getValue0()),damage.getValue1()).equals(MISS)) {
                             FL.removeView(mobView);
                             mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getHit(), DRAW));
                             FL.addView(mobView, 0);
                             hit = true;
                         }
+                        createDamageText(padDamageText(damage.getValue0()),damage.getValue1());
+
 //                        gcInstance.decreaseHP(damage);
                         updateHP();
                         break;
@@ -732,13 +738,27 @@ public class MainActivity extends AppCompatActivity {
                 && (y > (FL.getHeight() / 2) - (mobView.getHeight() / 3) && y < (FL.getHeight() / 2) + (mobView.getHeight() / 3));
     }
 
+    private Rect getLocationOnScreen(View mView) {
+        Rect mRect = new Rect();
+        int[] location = new int[2];
+
+        mView.getLocationOnScreen(location);
+
+        mRect.left = location[0];
+        mRect.top = location[1];
+        mRect.right = location[0] + mView.getWidth();
+        mRect.bottom = location[1] + mView.getHeight();
+
+        return mRect;
+    }
+
     /**
      * Gets the resource Id
      * @param name Name of resource
      * @param type Type of resource (e.g. drawable, raw)
      * @return Returns id of resource
      */
-    private int getResourceId(String name, String type){
+    private int getResourceId(String name, String type) {
         return getResources().getIdentifier(name, type, getPackageName());
     }
 }

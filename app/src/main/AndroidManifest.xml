@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.yliu240.mobslayer">
+    package="com.yliu240.mobslayer.View">
 
     <application
         android:allowBackup="true"
@@ -12,7 +12,7 @@
         android:theme="@style/AppTheme"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize">
         <activity
-            android:name=".View.SplashScreenActivity"
+            android:name="SplashScreenActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,19 +21,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".View.MenuActivity"
+            android:name="MenuActivity"
             android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.VIEW" />
-            </intent-filter>
         </activity>
         <activity
-            android:name=".View.MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
+            android:name="MainActivity">
         </activity>
     </application>
 
