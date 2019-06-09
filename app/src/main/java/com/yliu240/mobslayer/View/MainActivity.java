@@ -7,11 +7,13 @@ import android.graphics.LinearGradient;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +21,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -28,6 +31,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import org.javatuples.Pair;
@@ -38,6 +42,7 @@ import java.io.FileOutputStream;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ThreadLocalRandom;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
@@ -45,31 +50,38 @@ import com.google.gson.GsonBuilder;
 
 import com.yliu240.mobslayer.Controller.GameController;
 import com.yliu240.mobslayer.Model.Player;
+import com.yliu240.mobslayer.Model.Skill;
 import com.yliu240.mobslayer.View.R;
 
 public class MainActivity extends AppCompatActivity {
 
-    private int dmgTop, dmgBottom, critTop, critBottom, offsetX, offsetY;
+    private int dmgTop, dmgBottom, critTop, critBottom, skillTop, skillBottom;
     private ProgressBar HpBar, ExpBar;
     private Boolean isAlive = false, hit, sound_muted;
-    private ImageButton sound, right_arrow, left_arrow, skill_0 = null;
-    private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound, sharp_eyes_effect, levelUp;
-    private MediaPlayer bgm;
+    private ImageButton sound;
+    private ImageButton right_arrow;
+    private ImageButton left_arrow;
+    private Pair<SoundPool, Integer> hit_sound, spawn_sound, death_sound, levelUp;
+    public MediaPlayer bgm;
     private ImageView screenInFrontOfMob, mapView;
-
-    // Get TextViews
     private TextView mobHP_text, level_text, exp_val_text, exp_percent_text;
-    private GifImageView mobView, buffView, levelUpView;
-    private GifDrawable mob_drawable, buff_drawable, levelUp_drawable;
-    private AnimationListener mobDeath, mob_move, buff_effect, levelUp_effect;
+    private GifImageView mobView;
+    private GifDrawable mob_drawable;
+    private AnimationListener mobDeath;
+    private AnimationListener mob_move;
     private FrameLayout FL;
-    private FrameLayout.LayoutParams FL_lp, FL_lp_lvlup;
-    private RelativeLayout RL, RL_hp;
-    private RelativeLayout.LayoutParams RL_lp, RL_lp_exp, RL_lp_buff;
+    private FrameLayout.LayoutParams mob_layout;
+    private FrameLayout.LayoutParams level_up_layout;
+    private RelativeLayout RL, mob_hp;
+    private RelativeLayout.LayoutParams skill_layout;
+    private RelativeLayout.LayoutParams text_layout;
+    private RelativeLayout.LayoutParams exp_layout;
     private Typeface comic_sans;
     private GameController gcInstance;
     private Context mContext;
-    private final int DAMAGE_SIZE = 60;
+    private int DAMAGE_SIZE = 60;
+    private int HIT_SIZE = 350;
+    private int[] atk_fx = new int[]{R.drawable.b_atk, R.drawable.c_atk};
     private static final String DEBUG = "[DEBUG] @@@@@@@@@@@:";
     private static final String MISS = "  MISS  ";
     private static final String LV = "LV. ";
@@ -85,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             isAlive = savedInstanceState.getBoolean("isAlive");
         }
-
         mContext = getApplicationContext();
 
         // Variables for Layouts, Views
@@ -93,31 +104,18 @@ public class MainActivity extends AppCompatActivity {
         mobHP_text = findViewById(R.id.hp);
         mapView = findViewById(R.id.mapView);
         FL = findViewById(R.id.framelayout);
-        FL_lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
-                FrameLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-        FL_lp.gravity = Gravity.CENTER;
-        FL_lp_lvlup = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
-                FrameLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-        FL_lp_lvlup.gravity = Gravity.BOTTOM;
         RL = findViewById(R.id.relayout);
-        RL_hp = findViewById(R.id.relayout_hp);
-        RL_lp = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
-                RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-        RL_lp_buff = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
-                RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-        RL_lp_buff.addRule(RelativeLayout.CENTER_HORIZONTAL);
-//        RL_lp_buff.addRule(RelativeLayout.BELOW, R.id.relayout_hp);
-//        RL_lp_buff.addRule(RelativeLayout.ABOVE, R.id.bottom_bar);
-//        RL_lp_buff.addRule(RelativeLayout.ALIGN_PARENT_START);
-        RL_lp_exp = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT, // Width of TextView
-                RelativeLayout.LayoutParams.WRAP_CONTENT); // Height of TextView
-        RL_lp_exp.addRule(RelativeLayout.ABOVE, R.id.bottom_bar);
+        mob_hp = findViewById(R.id.mob_hp);
 
+        int frame_layout_wrap = FrameLayout.LayoutParams.WRAP_CONTENT;
+        int rel_layout_wrap = RelativeLayout.LayoutParams.WRAP_CONTENT;
+        mob_layout = new FrameLayout.LayoutParams(frame_layout_wrap, frame_layout_wrap, Gravity.CENTER);
+        level_up_layout = new FrameLayout.LayoutParams(frame_layout_wrap, frame_layout_wrap, Gravity.BOTTOM);
+        text_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
+        skill_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
+        skill_layout.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        exp_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
+        exp_layout.addRule(RelativeLayout.ABOVE, R.id.bottom_bar);
 
         // Buttons
         sound = findViewById(R.id.sound);
@@ -125,23 +123,13 @@ public class MainActivity extends AppCompatActivity {
         right_arrow = findViewById(R.id.right_arrow);
         sound_muted = Boolean.FALSE;
 
-        // Variable for Buff effect and Skill buttons
-        buffView = new GifImageView(mContext); // Could be refactored in SetGameProperties()
-        buffView.setLayoutParams(RL_lp_buff);
-        buffView.setImageResource(R.drawable.no_buff);
-        RL.addView(buffView, 1);
-        skill_0 = findViewById(R.id.skill_0);
-        setSkillListener("sharp_eyes");
-        levelUpView = new GifImageView(mContext); // Needs refactoring
-        levelUpView.setLayoutParams(FL_lp_lvlup);
-        levelUpView.setImageResource(R.drawable.no_buff);
-        FL.addView(levelUpView,1);
-
-        // Variables for damageText Colors
+        // Variables for newText Colors
         dmgTop = ContextCompat.getColor(mContext, R.color.dmgTop);
         dmgBottom = ContextCompat.getColor(mContext, R.color.dmgBottom);
         critTop = ContextCompat.getColor(mContext, R.color.critTop);
         critBottom = ContextCompat.getColor(mContext, R.color.critBottom);
+        skillTop = ContextCompat.getColor(mContext, R.color.skillTop);
+        skillBottom = ContextCompat.getColor(mContext, R.color.skillBottom);
         comic_sans = Typeface.createFromAsset(getAssets(), "comic-sans-ms-bold.ttf");
 
         // Variables for HP bar, EXP bar and set values
@@ -195,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Mob Properties
         gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
-        setMobSoundAndOffsets();
+        setSoundEffects();
 
         // Set HP and EXP bar
         HpBar.setMax(gcInstance.getCurrent_mob().getTotal_hp());
@@ -208,10 +196,14 @@ public class MainActivity extends AppCompatActivity {
         exp_val_text.setText(String.valueOf(gcInstance.getPlayer().getExp()));
         exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gcInstance.getPlayer().getEXP_percent()));
 
+        // Set Skills
+        ImageButton skill_0 = findViewById(R.id.skill_0);
+        setSkillListener(skill_0,0);
+
         // Create Mob
         mobHP_text.setText(gcInstance.getCurrent_mob().getHP_percent_string());
         mobView = new GifImageView(mContext);
-        mobView.setLayoutParams(FL_lp);
+        mobView.setLayoutParams(mob_layout);
         if(isAlive){
             mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
             FL.addView(mobView, 0);
@@ -225,7 +217,6 @@ public class MainActivity extends AppCompatActivity {
         mobView.setElevation(1);
     }
 
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -236,7 +227,6 @@ public class MainActivity extends AppCompatActivity {
             bgm.pause();
         }
     }
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -246,7 +236,6 @@ public class MainActivity extends AppCompatActivity {
         saveJson();
         System.gc();
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -256,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
         saveJson();
         System.gc();
     }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -323,71 +311,60 @@ public class MainActivity extends AppCompatActivity {
         bgm.start();
     }
 
-    private void setMobSoundAndOffsets(){
+    private void setSoundEffects(){
         hit_sound = loadSound(gcInstance.getCurrent_mob().getHit_sound());
         death_sound = loadSound(gcInstance.getCurrent_mob().getDeath_sound());
         spawn_sound = loadSound(gcInstance.getCurrent_mob().getSpawn_sound());
-        offsetX = gcInstance.getCurrent_mob().getOffsetX();
-        offsetY = gcInstance.getCurrent_mob().getOffsetY();
-        sharp_eyes_effect = loadSound("sharp_eyes_effect"); //This is temporary
+//        sharp_eyes = loadSound("sharp_eyes_effect"); //This is temporary
         levelUp = loadSound("level_up_effect"); //This is temporary
     }
 
-    private void setBuffSound(){
-        sharp_eyes_effect = loadSound("sharp_eyes_effect");
-    }
-
-
     //Listeners
-    private void setSkillListener(final String skill_name){
-        skill_0.setOnTouchListener(new View.OnTouchListener() {
+    @SuppressLint("ClickableViewAccessibility")
+    private void setSkillListener(final ImageView iv, int i){
+        Skill skill = gcInstance.getSkill(i);
+        final String skill_name = skill.getName();
+        final String message = skill.getMessage();
+        final Pair<SoundPool, Integer> s_sfx = loadSound(skill.getSound_effect());
+        final int s_width = skill.getWidth();
+        final int s_height = skill.getHeight();
+        iv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!gcInstance.getPlayer().getBuffed()){
+                    playSoundEffect(s_sfx);
+                    iv.setBackgroundResource(getResourceId(skill_name+"_disable", DRAW));
+                    iv.invalidate();
 
-            @SuppressLint("ClickableViewAccessibility")
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: {
-                        if(!gcInstance.getPlayer().getBuffed()){
-                            playSoundEffect(sharp_eyes_effect);
-                            skill_0.setBackgroundResource(getResourceId(skill_name+"_disable", DRAW));
-                            skill_0.invalidate();
-                            RL.removeView(buffView);
-                            buffView.setImageResource(getResourceId(skill_name, DRAW));
-                            RL.addView(buffView, 1);
-                            buff_drawable = (GifDrawable) buffView.getDrawable();
-                            buff_drawable.setLoopCount(1);
-                            buff_effect = new AnimationListener() {
-                                @Override
-                                public void onAnimationCompleted(int loopNumber) {
-                                    buffView.setImageResource(getResourceId("no_buff", DRAW));
-                                }
-                            };
-                            buff_drawable.removeAnimationListener(buff_effect);
-                            buff_drawable.addAnimationListener(buff_effect);
+                    ImageView skill_img = new ImageView(getApplicationContext());
+                    skill_img.setBackgroundResource(R.drawable.sharp_eyes);
+                    skill_img.setLayoutParams(skill_layout);
+                    skill_img.requestLayout();
+                    skill_img.getLayoutParams().height = s_height;
+                    skill_img.getLayoutParams().width = s_width;
+                    skill_img.setElevation(3);
+                    RL.addView(skill_img);
+                    AnimationDrawable skill_anim = (AnimationDrawable) skill_img.getBackground();
+                    skill_anim.start();
+                    checkIfAnimationDone(skill_anim, skill_img, RL);
 
-                            createDamageText("+50% Crit", true);
-                            gcInstance.getPlayer().setBuffedCoolDown();
-                            coolDown(skill_name);
-                        }
-                        break;
-                    }
-                    case MotionEvent.ACTION_UP: {
-                        break;
-                    }
+                    createText(message, "skill", 0, 0);
+                    gcInstance.getPlayer().setSkillCoolDown();
+                    coolDown(iv, skill_name);
                 }
-                return false;
             }
         });
     }
 
-    public void coolDown(final String skill_name){
+    public void coolDown(final ImageView iv, final String skill_name){
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        skill_0.setBackgroundResource(getResourceId(skill_name+"_enable", DRAW));
-                        skill_0.invalidate();
+                        iv.setBackgroundResource(getResourceId(skill_name+"_enable", DRAW));
+                        iv.invalidate();
                     }
                 });
             }
@@ -456,12 +433,7 @@ public class MainActivity extends AppCompatActivity {
                         Pair<Integer, Boolean> damage = new Pair<>(0, false);
                         int x = (int) event.getX();
                         int y = (int) event.getY();
-                        String lineSeparator = System.getProperty("line.separator");
-                        Log.d(DEBUG, String.format("Touched Position - x: %s, y: %s ",  x, y));
-
                         Rect mob_position = getLocationOnScreen(mobView);
-                        Log.d(DEBUG, String.format("Mob Position - %d, %d | %d, %d ",  mob_position.top, mob_position.bottom, mob_position.left,  mob_position.right));
-                        Log.d(DEBUG, String.format("Is in range: %s %s ", String.valueOf(mob_position.contains(x,y)), lineSeparator));
 
                         if (mob_position.contains(x,y)) {
                             damage = gcInstance.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
@@ -470,9 +442,12 @@ public class MainActivity extends AppCompatActivity {
                             FL.addView(mobView, 0);
                             hit = true;
                         }
-                        createDamageText(padDamageText(damage.getValue0()),damage.getValue1());
-
-//                        gcInstance.decreaseHP(damage);
+                        String type = "";
+                        if (damage.getValue1()){
+                            type = "critical";
+                        }
+                        createText(padText(damage.getValue0()), type, x-360, y-300);
+                        drawDmg(x, y, damage.getValue1());
                         updateHP();
                         break;
                     }
@@ -482,6 +457,7 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         } else if (hit) {
                             FL.removeView(mobView);
+
                             mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
                             FL.addView(mobView, 0);
                             hit = false;
@@ -518,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         HpBar.setProgress(gcInstance.getCurrent_mob().getCurrent_hp());
-        RL_hp.setVisibility(View.VISIBLE);
+        mob_hp.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
         fadeOut.setDuration(4000);
@@ -534,50 +510,97 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                RL_hp.setVisibility(View.INVISIBLE);
+                mob_hp.setVisibility(View.INVISIBLE);
             }
         });
-        RL_hp.startAnimation(fadeOut);
+        mob_hp.startAnimation(fadeOut);
     }
 
     // Create Damage Text and sets the font, size, text, position
-    private String createDamageText(String damage, Boolean critical) {
-        final TextView damageText = new TextView(getApplicationContext());
-        damageText.setLayoutParams(RL_lp);
-        damageText.setSingleLine();
-        damageText.setTypeface(comic_sans);
-        damageText.setTextSize(DAMAGE_SIZE);
-        damageText.setText(damage);
+    private void createText(String message, String type, int x, int y) {
+        final TextView newText = new TextView(getApplicationContext());
+        newText.setLayoutParams(text_layout);
+        newText.setSingleLine();
+        newText.setTypeface(comic_sans);
+        newText.setTextSize(DAMAGE_SIZE);
+        newText.setText(message);
 
         Shader shader;
-        if (critical) {
-            shader = new LinearGradient(0, 0, 0, damageText.getTextSize(),
-                    critTop, critBottom, Shader.TileMode.CLAMP);
-            damageText.setShadowLayer(0.01f, -2, 2, critTop);
-        } else {
-            shader = new LinearGradient(0, 0, 0, damageText.getTextSize(),
-                    dmgTop, dmgBottom, Shader.TileMode.CLAMP);
-            damageText.setShadowLayer(0.01f, -2, 2, dmgTop);
+        switch(type){
+            case "critical":
+                shader = new LinearGradient(0, 0, 0, newText.getTextSize(),
+                        critTop, critBottom, Shader.TileMode.CLAMP);
+                newText.setShadowLayer(0.01f, -2, 2, critTop);
+                break;
+            case "skill":
+                shader = new LinearGradient(0, 0, 0, newText.getTextSize(),
+                        skillTop, skillBottom, Shader.TileMode.CLAMP);
+                newText.setShadowLayer(0.01f, -2, 2, dmgTop);
+                break;
+            default:
+                shader = new LinearGradient(0, 0, 0, newText.getTextSize(),
+                        dmgTop, dmgBottom, Shader.TileMode.CLAMP);
+                newText.setShadowLayer(0.01f, -2, 2, dmgTop);
+                break;
         }
-        damageText.getPaint().setShader(shader);
-        damageText.setTextColor(damageText.getTextColors().withAlpha(255));
+        newText.getPaint().setShader(shader);
+        newText.setTextColor(newText.getTextColors().withAlpha(255));
 
-        // Position damageText to Click position
-        damageText.measure(0,0);
-        damageText.setX((int)(FL.getWidth()/2) - (int)(damageText.getMeasuredWidth()/2));
-        damageText.setY((int)(FL.getHeight()/2) - (damageText.getMeasuredHeight()));
+        // Position newText to Click position
+//        newText.measure(0,0);
+//        Log.d(DEBUG, String.format("width: %d, height: %d ",newText.getMeasuredWidth(), newText.getMeasuredHeight()));
+        newText.setY(y);
+        newText.setX(x);
+        if(x==0 && y==0){
+            newText.measure(0,0);
+            newText.setX((int)(FL.getWidth()/2) - (int)(newText.getMeasuredWidth()/2));
+            newText.setY((int)(FL.getHeight()/2) - (newText.getMeasuredHeight()));
+        }
 
-        RL.addView(damageText);
-        damageText.animate().translationYBy(-400).alpha(0.2f).setDuration(1000).withEndAction(new Runnable() {
+        RL.addView(newText);
+        newText.animate().translationYBy(-400).alpha(0.2f).setDuration(1000).withEndAction(new Runnable() {
             public void run() {
                 // Remove the view from the parent layout
-                RL.removeView(damageText);
+                RL.removeView(newText);
             }
         });
-        return damage;
     }
 
-    private String padDamageText(int dmg) {
+    private void drawDmg(int x, int y, boolean isCrit){
+        ImageView dmg = new ImageView(getApplicationContext());
+        int i = ThreadLocalRandom.current().nextInt(0, atk_fx.length);
+        dmg.setBackgroundResource(atk_fx[i]);
+        if(isCrit){
+            dmg.setBackgroundResource(R.drawable.a_atk);
+        }
+        TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(HIT_SIZE, HIT_SIZE);
+        dmg.setLayoutParams(layoutParams);
+        FL.addView(dmg);
+        dmg.setElevation(3);
+        dmg.setX(x-HIT_SIZE/2);
+        dmg.setY(y-HIT_SIZE/2);
+        AnimationDrawable atkAnimation = (AnimationDrawable) dmg.getBackground();
+        atkAnimation.start();
+        checkIfAnimationDone(atkAnimation, dmg, FL);
+    }
+
+    private void checkIfAnimationDone(AnimationDrawable anim, final ImageView iv, final ViewGroup parent_layout){
+        final AnimationDrawable a = anim;
+        // Make the other variables final here
+        int timeBetweenChecks = 100;
+        Handler h = new Handler();
+        h.postDelayed(new Runnable(){
+            public void run(){
+                if (a.getCurrent() != a.getFrame(a.getNumberOfFrames() - 1)){
+                    checkIfAnimationDone(a, iv, parent_layout);
+                } else{
+                    parent_layout.removeView(iv);
+                }
+            }
+        }, timeBetweenChecks);
+    }
+
+    private String padText(int dmg) {
         if (dmg == 0) {
             return MISS;
         }
@@ -631,7 +654,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateExp() {
         final TextView mob_exp = new TextView(mContext);
-        mob_exp.setLayoutParams(RL_lp_exp);
+        mob_exp.setLayoutParams(exp_layout);
         mob_exp.setTextColor(ContextCompat.getColor(mContext, R.color.GainExpColor));
         mob_exp.setText(String.format(Locale.CANADA, " +%d EXP", gcInstance.getCurrent_mob().getExp()));
         RL.addView(mob_exp);
@@ -654,38 +677,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void levelUp(){
         playSoundEffect(levelUp);
-        RL.removeView(buffView);
-        buffView.setImageResource(getResourceId("level_up", DRAW));
-        RL.addView(buffView, 1);
-        buff_drawable = (GifDrawable) buffView.getDrawable();
-        buff_drawable.setLoopCount(1);
-        buff_effect = new AnimationListener() {
-            @Override
-            public void onAnimationCompleted(int loopNumber) {
-                buffView.setImageResource(getResourceId("no_buff", DRAW));
-            }
-        };
-        buff_drawable.removeAnimationListener(buff_effect);
-        buff_drawable.addAnimationListener(buff_effect);
+        ImageView lvlup_img = new ImageView(getApplicationContext());
+        lvlup_img.setBackgroundResource(R.drawable.level_up);
+        lvlup_img.setLayoutParams(level_up_layout);
+        FL.addView(lvlup_img,0);
+        lvlup_img.setElevation(3000);
+        lvlup_img.setX(-100);
+        AnimationDrawable lvlup_anim = (AnimationDrawable) lvlup_img.getBackground();
+        lvlup_anim.start();
+        checkIfAnimationDone(lvlup_anim, lvlup_img, FL);
         gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
-//        FL.removeView(levelUpView);
-//        levelUpView.setImageResource(getResourceId("level_up", DRAW));
-//        FL.addView(levelUpView, 1);
-//        levelUpView.bringToFront();
-//        levelUp_drawable = (GifDrawable) levelUpView.getDrawable();
-//        levelUp_drawable.setLoopCount(1);
-//        levelUp_effect = new AnimationListener() {
-//            @Override
-//            public void onAnimationCompleted(int loopNumber) {
-//                levelUpView.setImageResource(getResourceId("no_buff", DRAW));
-//            }
-//        };
-//        levelUp_drawable.removeAnimationListener(levelUp_effect);
-//        levelUp_drawable.addAnimationListener(levelUp_effect);
     }
-    private void waitToSpawn() {
-//        int spawnTime = ThreadLocalRandom.current().nextInt(1500, 2000 + 1);
 
+    private void waitToSpawn() {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -693,8 +697,6 @@ public class MainActivity extends AppCompatActivity {
                 lB.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-//                        Toast.makeText(mContext, String.format(Locale.CANADA, "A wild %s has appeared!",
-//                                gcInstance.getCurrent_mob().getName()), Toast.LENGTH_SHORT).show();
                         spawnMob();
                     }
                 });
@@ -725,19 +727,6 @@ public class MainActivity extends AppCompatActivity {
     /*
      * Helper functions
      */
-    //
-
-    /**
-     * Check whether the clicked position is on the monster or not
-     * @param x x-coordinate
-     * @param y y-coordinate
-     * @return Returns a boolean of whether the clicked point is on the monster or not
-     */
-    private Boolean inRange(int x, int y) {
-        return (x > (FL.getWidth() / 2) - (mobView.getWidth() / 3) && x < (FL.getWidth() / 2) + (mobView.getWidth() / 3))
-                && (y > (FL.getHeight() / 2) - (mobView.getHeight() / 3) && y < (FL.getHeight() / 2) + (mobView.getHeight() / 3));
-    }
-
     private Rect getLocationOnScreen(View mView) {
         Rect mRect = new Rect();
         int[] location = new int[2];

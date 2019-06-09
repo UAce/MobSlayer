@@ -28,6 +28,8 @@
     <color name="dmgBottom">#EEDE30</color>
     <color name="critTop">#d70100</color>
     <color name="critBottom">#dd6ecc</color>
+    <color name="skillTop">#063FE6</color>
+    <color name="skillBottom">#13A4E7</color>
 
     <!--Level Color-->
     <color name="GainExpColor">#D8FAEE44</color>

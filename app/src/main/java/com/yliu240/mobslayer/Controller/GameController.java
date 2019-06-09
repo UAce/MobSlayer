@@ -9,6 +9,7 @@ import com.yliu240.mobslayer.Model.Buff;
 import com.yliu240.mobslayer.Model.MapLevel;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
+import com.yliu240.mobslayer.Model.Skill;
 
 import org.javatuples.Pair;
 import java.util.ArrayList;
@@ -33,8 +34,8 @@ public class GameController {
     private Player myPlayer = Player.getInstance(); //Singleton
     @SerializedName("buff_info")
     private List<Buff> buffs = new ArrayList<>();
-//    @SerializedName("skill_info")
-//    private List<Skill> skills = new ArrayList<>();
+    @SerializedName("skill_info")
+    private List<Skill> skills = new ArrayList<>();
 
     // Other properties of GameController
     @Expose(serialize = false, deserialize = false)
@@ -61,6 +62,9 @@ public class GameController {
 
 
     // Getter methods
+    public List<Skill> getSkills(){
+        return this.skills;
+    }
     public List<MapLevel> getMaps(){
         return this.maps;
     }
@@ -179,5 +183,9 @@ public class GameController {
             myPlayer.setExp(new_exp);
             return false;
         }
+    }
+
+    public Skill getSkill(int id){
+        return skills.get(id);
     }
 }

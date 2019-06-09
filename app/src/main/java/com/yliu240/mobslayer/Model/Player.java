@@ -75,7 +75,7 @@ public class Player {
     public void setCritical_rate(double critical_rate){
         this.critical_rate = critical_rate;
     }
-    public void setBuffedCoolDown(){
+    public void setSkillCoolDown(){
         if(!this.buffed) {
             this.buffed = true;
             new Timer().schedule(new TimerTask() {

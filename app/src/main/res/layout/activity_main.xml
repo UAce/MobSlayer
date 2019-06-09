@@ -24,7 +24,7 @@
         android:layout_gravity="center">
 
         <RelativeLayout
-            android:id="@+id/relayout_hp"
+            android:id="@+id/mob_hp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -53,28 +53,28 @@
             android:id="@+id/bottom_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
             android:background="@drawable/info_gradient">
 
             <LinearLayout
                 android:id="@+id/info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingBottom="5dp"
                 android:paddingLeft="5dp"
+                android:paddingTop="5dp"
                 android:paddingRight="5dp"
-                android:paddingTop="5dp">
+                android:paddingBottom="5dp">
 
                 <TextView
                     android:id="@+id/level"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/level_gradient"
-                    android:paddingBottom="10dp"
                     android:paddingLeft="5dp"
-                    android:paddingRight="5dp"
                     android:paddingTop="10dp"
+                    android:paddingRight="5dp"
+                    android:paddingBottom="10dp"
                     android:textColor="@color/LevelColor"
                     android:textSize="20sp" />
 
@@ -170,8 +170,16 @@
             android:id="@+id/skill_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/skill_0"
-            android:layout_alignParentEnd="true"
+            android:layout_above="@+id/bottom_bar"
+            android:layout_toStartOf="@+id/skill_0"
+            android:visibility="invisible" />
+
+        <ImageButton
+            android:id="@+id/skill_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/bottom_bar"
+            android:layout_toStartOf="@+id/skill_1"
             android:visibility="invisible" />
 
         <ImageButton
@@ -181,7 +189,7 @@
             android:background="@android:color/transparent"
             app:srcCompat="@drawable/right_arrow"
             android:layout_marginTop="65dp"
-            android:layout_below="@+id/relayout_hp"
+            android:layout_below="@+id/mob_hp"
             android:layout_alignStart="@+id/skill_0" />
 
         <ImageButton
@@ -212,5 +220,4 @@
         <!--app:srcCompat="@drawable/sharp_eyes_enable" />-->
 
     </RelativeLayout>
-
 </FrameLayout>
