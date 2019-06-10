@@ -4,14 +4,14 @@ package com.yliu240.mobslayer.Model;
  * Created by yu-yu on 2019-02-12.
  */
 
-public class Buff {
+public class Level {
     private String name;
     private String icon_enable;
     private String icon_disable;
     private String sound_effect;
 
     // Maybe Pass a data structure with all the infos
-    public Buff(){}
+    public Level(){}
 
     // Getter Methods
     public String getName(){

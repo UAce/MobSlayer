@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     private RelativeLayout.LayoutParams text_layout;
     private RelativeLayout.LayoutParams exp_layout;
     private Typeface comic_sans;
-    private GameController gcInstance;
+    private GameController gc;
     private Context mContext;
     private int DAMAGE_SIZE = 60;
     private int HIT_SIZE = 350;
@@ -162,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting().serializeNulls();
         Gson gson = builder.addSerializationExclusionStrategy(strategy).create();
-        String newGameInfo = gson.toJson(gcInstance);
+        String newGameInfo = gson.toJson(gc);
         FileOutputStream outputStream;
         try {
             outputStream = openFileOutput("currentGameInfo.json", Context.MODE_PRIVATE);
@@ -174,38 +174,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setGameProperties() {
-        gcInstance = GameController.getInstance();
+        gc = GameController.getInstance();
 
         // Set Map properties
-        gcInstance.setCurrent_map();
-        mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+        gc.setCurrent_map();
+        mapView.setImageResource(getResourceId(gc.getCurrent_map().getBg_image(), DRAW));
         createBgm();
 
         // Set Mob Properties
-        gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
+        gc.setCurrent_mob(gc.getCurrent_mobId());
         setSoundEffects();
 
         // Set HP and EXP bar
-        HpBar.setMax(gcInstance.getCurrent_mob().getTotal_hp());
-        HpBar.setProgress(gcInstance.getCurrent_mob().getCurrent_hp());
-        ExpBar.setMax(gcInstance.getPlayer().getTotal_exp());
-        ExpBar.setProgress(gcInstance.getPlayer().getExp());
+        HpBar.setMax(gc.getCurrent_mob().getTotal_hp());
+        HpBar.setProgress(gc.getCurrent_mob().getCurrent_hp());
+        ExpBar.setMax(gc.getPlayer().getTotal_exp());
+        ExpBar.setProgress(gc.getPlayer().getExp());
 
         // Set Player HP & EXP
-        level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gcInstance.getPlayer().getLevel()));
-        exp_val_text.setText(String.valueOf(gcInstance.getPlayer().getExp()));
-        exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gcInstance.getPlayer().getEXP_percent()));
+        level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gc.getPlayer().getLevel()));
+        exp_val_text.setText(String.valueOf(gc.getPlayer().getExp()));
+        exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gc.getPlayer().getEXP_percent()));
 
         // Set Skills
         ImageButton skill_0 = findViewById(R.id.skill_0);
         setSkillListener(skill_0,0);
 
         // Create Mob
-        mobHP_text.setText(gcInstance.getCurrent_mob().getHP_percent_string());
+        mobHP_text.setText(gc.getCurrent_mob().getHP_percent_string());
         mobView = new GifImageView(mContext);
         mobView.setLayoutParams(mob_layout);
+        mobView.requestLayout();
+        mobView.getLayoutParams().height = gc.getCurrent_mob().getHeight();
+        mobView.getLayoutParams().width = gc.getCurrent_mob().getWidth();
         if(isAlive){
-            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
+            mobView.setImageResource(getResourceId(gc.getCurrent_mob().getMove(), DRAW));
             FL.addView(mobView, 0);
             hit = false;
             startAttackListener();
@@ -249,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        gcInstance = GameController.getInstance();
+        gc = GameController.getInstance();
         startBgmListener();
         if(!sound_muted){
            bgm.start();
@@ -303,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
         if (bgm != null){
             bgm.pause();
         }
-        bgm = MediaPlayer.create(mContext, getResourceId(gcInstance.getCurrent_map().getBgm_name(), "raw"));
+        bgm = MediaPlayer.create(mContext, getResourceId(gc.getCurrent_map().getBgm_name(), "raw"));
         bgm.setLooping(true);
         if(sound_muted){
             return;
@@ -312,17 +315,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setSoundEffects(){
-        hit_sound = loadSound(gcInstance.getCurrent_mob().getHit_sound());
-        death_sound = loadSound(gcInstance.getCurrent_mob().getDeath_sound());
-        spawn_sound = loadSound(gcInstance.getCurrent_mob().getSpawn_sound());
-//        sharp_eyes = loadSound("sharp_eyes_effect"); //This is temporary
+        hit_sound = loadSound(gc.getCurrent_mob().getHit_sound());
+        death_sound = loadSound(gc.getCurrent_mob().getDeath_sound());
         levelUp = loadSound("level_up_effect"); //This is temporary
     }
 
     //Listeners
     @SuppressLint("ClickableViewAccessibility")
     private void setSkillListener(final ImageView iv, int i){
-        Skill skill = gcInstance.getSkill(i);
+        Skill skill = gc.getSkill(i);
         final String skill_name = skill.getName();
         final String message = skill.getMessage();
         final Pair<SoundPool, Integer> s_sfx = loadSound(skill.getSound_effect());
@@ -331,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!gcInstance.getPlayer().getBuffed()){
+                if(!gc.getPlayer().getBuffed()){
                     playSoundEffect(s_sfx);
                     iv.setBackgroundResource(getResourceId(skill_name+"_disable", DRAW));
                     iv.invalidate();
@@ -349,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
                     checkIfAnimationDone(skill_anim, skill_img, RL);
 
                     createText(message, "skill", 0, 0);
-                    gcInstance.getPlayer().setSkillCoolDown();
+                    gc.getPlayer().setSkillCoolDown();
                     coolDown(iv, skill_name);
                 }
             }
@@ -392,20 +393,20 @@ public class MainActivity extends AppCompatActivity {
         left_arrow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                gcInstance.switch_map(false);
-//                Log.d(DEBUG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
-//                Log.d(DEBUG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                gc.switch_map(false);
+//                Log.d(DEBUG, "Current Map: "+gc.getCurrent_map().getBg_image());
+//                Log.d(DEBUG, "Current BGM: "+gc.getCurrent_map().getBgm_name());
+                mapView.setImageResource(getResourceId(gc.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
         right_arrow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                gcInstance.switch_map(true);
-//                Log.d(DEBUG, "Current Map: "+gcInstance.getCurrent_map().getBg_image());
-//                Log.d(DEBUG, "Current BGM: "+gcInstance.getCurrent_map().getBgm_name());
-                mapView.setImageResource(getResourceId(gcInstance.getCurrent_map().getBg_image(), DRAW));
+                gc.switch_map(true);
+//                Log.d(DEBUG, "Current Map: "+gc.getCurrent_map().getBg_image());
+//                Log.d(DEBUG, "Current BGM: "+gc.getCurrent_map().getBgm_name());
+                mapView.setImageResource(getResourceId(gc.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
@@ -424,21 +425,21 @@ public class MainActivity extends AppCompatActivity {
 
                     // Pressed
                     case MotionEvent.ACTION_DOWN: {
-                        if (gcInstance.getCurrent_mob().isDead()) {
+                        if (gc.getCurrent_mob().isDead()) {
                             break;
                         }
                         playSoundEffect(hit_sound);
 
                         // Generate random Damage and create damage Text
                         Pair<Integer, Boolean> damage = new Pair<>(0, false);
-                        int x = (int) event.getX();
-                        int y = (int) event.getY();
+                        int x = (int) event.getRawX();
+                        int y = (int) event.getRawY();
                         Rect mob_position = getLocationOnScreen(mobView);
 
                         if (mob_position.contains(x,y)) {
-                            damage = gcInstance.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
+                            damage = gc.attackMob(); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
                             FL.removeView(mobView);
-                            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getHit(), DRAW));
+                            mobView.setImageResource(getResourceId(gc.getCurrent_mob().getHit(), DRAW));
                             FL.addView(mobView, 0);
                             hit = true;
                         }
@@ -446,19 +447,19 @@ public class MainActivity extends AppCompatActivity {
                         if (damage.getValue1()){
                             type = "critical";
                         }
-                        createText(padText(damage.getValue0()), type, x-360, y-300);
-                        drawDmg(x, y, damage.getValue1());
+                        createText(padText(damage.getValue0()), type, x, y);
+                        drawDmg((int) event.getX(), (int) event.getY(), damage.getValue1());
                         updateHP();
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
-                        if (gcInstance.getCurrent_mob().isDead()) {
+                        if (gc.getCurrent_mob().isDead()) {
                             break;
                         } else if (hit) {
                             FL.removeView(mobView);
 
-                            mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
+                            mobView.setImageResource(getResourceId(gc.getCurrent_mob().getMove(), DRAW));
                             FL.addView(mobView, 0);
                             hit = false;
                         }
@@ -472,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("ClickableViewAccessibility")
     private void updateHP() {
-        if (gcInstance.getCurrent_mob().getCurrent_hp() == 0){
+        if (gc.getCurrent_mob().getCurrent_hp() == 0){
             screenInFrontOfMob.setOnTouchListener(null);
             isAlive = false;
             Activity lC = MainActivity.this;
@@ -483,8 +484,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-        mobHP_text.setText(gcInstance.getCurrent_mob().getHP_percent_string());
-        float hp = gcInstance.getCurrent_mob().getHP_percent();
+        mobHP_text.setText(gc.getCurrent_mob().getHP_percent_string());
+        float hp = gc.getCurrent_mob().getHP_percent();
         if (hp >= 66) {
             HpBar.getProgressDrawable().setColorFilter(0xff00ff00, android.graphics.PorterDuff.Mode.MULTIPLY);
         } else if (hp < 66 && hp >= 33) {
@@ -493,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
             HpBar.getProgressDrawable().setColorFilter(0xFFFF0000, android.graphics.PorterDuff.Mode.MULTIPLY);
         }
 
-        HpBar.setProgress(gcInstance.getCurrent_mob().getCurrent_hp());
+        HpBar.setProgress(gc.getCurrent_mob().getCurrent_hp());
         mob_hp.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator()); //and this
@@ -547,14 +548,16 @@ public class MainActivity extends AppCompatActivity {
         newText.setTextColor(newText.getTextColors().withAlpha(255));
 
         // Position newText to Click position
-//        newText.measure(0,0);
+        newText.measure(0,0);
 //        Log.d(DEBUG, String.format("width: %d, height: %d ",newText.getMeasuredWidth(), newText.getMeasuredHeight()));
-        newText.setY(y);
-        newText.setX(x);
+        int w = newText.getMeasuredWidth();
+        int h = newText.getMeasuredHeight();
         if(x==0 && y==0){
-            newText.measure(0,0);
-            newText.setX((int)(FL.getWidth()/2) - (int)(newText.getMeasuredWidth()/2));
-            newText.setY((int)(FL.getHeight()/2) - (newText.getMeasuredHeight()));
+            newText.setX((int)(FL.getWidth()/2) - (int)(w/2));
+            newText.setY((int)(FL.getHeight()/2) - (h));
+        }else{
+            newText.setX(x-w/2);
+            newText.setY(y-h-100);
         }
 
         RL.addView(newText);
@@ -636,7 +639,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void mobDeath() {
         playSoundEffect(death_sound);
-        mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getDeath(), DRAW));
+        mobView.setImageResource(getResourceId(gc.getCurrent_mob().getDeath(), DRAW));
         mob_drawable = (GifDrawable) mobView.getDrawable();
         mob_drawable.setLoopCount(1);
         mobDeath = new AnimationListener() {
@@ -656,7 +659,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView mob_exp = new TextView(mContext);
         mob_exp.setLayoutParams(exp_layout);
         mob_exp.setTextColor(ContextCompat.getColor(mContext, R.color.GainExpColor));
-        mob_exp.setText(String.format(Locale.CANADA, " +%d EXP", gcInstance.getCurrent_mob().getExp()));
+        mob_exp.setText(String.format(Locale.CANADA, " +%d EXP", gc.getCurrent_mob().getExp()));
         RL.addView(mob_exp);
         mob_exp.animate().translationYBy(-50).alpha(1f).alpha(0.15f).setDuration(3500).withEndAction(new Runnable() {
             public void run() {
@@ -664,15 +667,15 @@ public class MainActivity extends AppCompatActivity {
                 RL.removeView(mob_exp);
             }
         });
-        Boolean level_Up = gcInstance.gainEXP();
+        Boolean level_Up = gc.gainEXP();
         if(level_Up){
             levelUp();
-            ExpBar.setMax(gcInstance.getPlayer().getTotal_exp());
-            level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gcInstance.getPlayer().getLevel()));
+            ExpBar.setMax(gc.getPlayer().getTotal_exp());
+            level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gc.getPlayer().getLevel()));
         }
-        ExpBar.setProgress(gcInstance.getPlayer().getExp());
-        exp_val_text.setText(gcInstance.getPlayer().getEXP_toString());
-        exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gcInstance.getPlayer().getEXP_percent()));
+        ExpBar.setProgress(gc.getPlayer().getExp());
+        exp_val_text.setText(gc.getPlayer().getEXP_toString());
+        exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gc.getPlayer().getEXP_percent()));
     }
 
     private void levelUp(){
@@ -686,7 +689,7 @@ public class MainActivity extends AppCompatActivity {
         AnimationDrawable lvlup_anim = (AnimationDrawable) lvlup_img.getBackground();
         lvlup_anim.start();
         checkIfAnimationDone(lvlup_anim, lvlup_img, FL);
-        gcInstance.setCurrent_mob(gcInstance.getCurrent_mobId());
+        gc.setCurrent_mob(gc.getCurrent_mobId());
     }
 
     private void waitToSpawn() {
@@ -705,23 +708,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void spawnMob() {
-        gcInstance.getCurrent_mob().resetHP();
-        playSoundEffect(spawn_sound);
-        mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getSpawn(), DRAW));
-        mob_drawable = (GifDrawable) mobView.getDrawable();
-        mob_drawable.setLoopCount(1);
-        mob_move = new AnimationListener() {
-            @Override
-            public void onAnimationCompleted(int loopNumber) {
-                mobView.setImageResource(getResourceId(gcInstance.getCurrent_mob().getMove(), DRAW));
-                isAlive = true;
-                //Listens to screen being pressed
-                hit = false;
-                startAttackListener();
-            }
-        };
-        mob_drawable.removeAnimationListener(mobDeath);
-        mob_drawable.addAnimationListener(mob_move);
+        gc.getCurrent_mob().resetHP();
+        mobView.setImageResource(getResourceId(gc.getCurrent_mob().getMove(), DRAW));
+        isAlive = true;
+        hit = false;
+        startAttackListener();
     }
 
     /*

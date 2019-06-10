@@ -1,12 +1,10 @@
 package com.yliu240.mobslayer.Controller;
 
-import android.util.Log;
-
 import com.google.gson.annotations.Expose;
 
 import com.google.gson.annotations.SerializedName;
-import com.yliu240.mobslayer.Model.Buff;
-import com.yliu240.mobslayer.Model.MapLevel;
+import com.yliu240.mobslayer.Model.Level;
+import com.yliu240.mobslayer.Model.Map;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
 import com.yliu240.mobslayer.Model.Skill;
@@ -25,15 +23,15 @@ public class GameController {
     private static final String TAG = "DEBUG";
     // Fields in JSON file
     @SerializedName("map_info")
-    private List<MapLevel> maps = new ArrayList<>();
+    private List<Map> maps = new ArrayList<>();
     private int current_mapId;
     @SerializedName("mob_info")
     private List<Mob> mobs = new ArrayList<>();
     private int current_mobId;
     @SerializedName("player_info")
     private Player myPlayer = Player.getInstance(); //Singleton
-    @SerializedName("buff_info")
-    private List<Buff> buffs = new ArrayList<>();
+    @SerializedName("level_info")
+    private List<Level> levels = new ArrayList<>();
     @SerializedName("skill_info")
     private List<Skill> skills = new ArrayList<>();
 
@@ -41,7 +39,7 @@ public class GameController {
     @Expose(serialize = false, deserialize = false)
     private Mob current_mob = new Mob();
     @Expose(serialize = false, deserialize = false)
-    private MapLevel current_map = new MapLevel();
+    private Map current_map = new Map();
     @Expose(serialize = false, deserialize = false)
     private Mob currentMob;
 
@@ -65,7 +63,7 @@ public class GameController {
     public List<Skill> getSkills(){
         return this.skills;
     }
-    public List<MapLevel> getMaps(){
+    public List<Map> getMaps(){
         return this.maps;
     }
     public List<Mob> getMobs(){
@@ -83,7 +81,7 @@ public class GameController {
     public Mob getCurrent_mob(){
         return this.current_mob;
     }
-    public MapLevel getCurrent_map(){
+    public Map getCurrent_map(){
         return this.current_map;
     }
 
@@ -103,19 +101,17 @@ public class GameController {
         this.current_mob.setTotal_hp(new_mob.getTotal_hp()*multiplier);
         this.current_mob.setCurrent_hp(new_mob.getCurrent_hp()*multiplier);
         this.current_mob.setExp(new_mob.getExp()*multiplier);
-        this.current_mob.setOffsetX(new_mob.getOffsetX());
-        this.current_mob.setOffsetY(new_mob.getOffsetY());
+        this.current_mob.setWidth(new_mob.getWidth());
+        this.current_mob.setHeight(new_mob.getHeight());
         this.current_mob.setMove(new_mob.getMove());
-        this.current_mob.setSpawn(new_mob.getSpawn());
         this.current_mob.setDeath(new_mob.getDeath());
         this.current_mob.setHit(new_mob.getHit());
-        this.current_mob.setSpawn_sound(new_mob.getSpawn_sound());
         this.current_mob.setDeath_sound(new_mob.getDeath_sound());
         this.current_mob.setHit_sound(new_mob.getHit_sound());
     }
 
     public void setCurrent_map(){
-        MapLevel new_map = maps.get(this.current_mapId);
+        Map new_map = maps.get(this.current_mapId);
         this.current_map.setName(new_map.getName());
         this.current_map.setBg_image(new_map.getBg_image());
         this.current_map.setBgm_name(new_map.getBgm_name());
@@ -144,13 +140,11 @@ public class GameController {
         this.current_mob.setTotal_hp(new_mob.getTotal_hp());
         this.current_mob.setCurrent_hp(new_mob.getCurrent_hp());
         this.current_mob.setExp(new_mob.getExp());
-        this.current_mob.setOffsetX(new_mob.getOffsetX());
-        this.current_mob.setOffsetY(new_mob.getOffsetY());
+        this.current_mob.setWidth(new_mob.getWidth());
+        this.current_mob.setHeight(new_mob.getHeight());
         this.current_mob.setMove(new_mob.getMove());
-        this.current_mob.setSpawn(new_mob.getSpawn());
         this.current_mob.setDeath(new_mob.getDeath());
         this.current_mob.setHit(new_mob.getHit());
-        this.current_mob.setSpawn_sound(new_mob.getSpawn_sound());
         this.current_mob.setDeath_sound(new_mob.getDeath_sound());
         this.current_mob.setHit_sound(new_mob.getHit_sound());
     }

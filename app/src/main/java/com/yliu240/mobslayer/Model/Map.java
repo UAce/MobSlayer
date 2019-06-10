@@ -4,13 +4,13 @@ package com.yliu240.mobslayer.Model;
  * Created by yu-yu on 2019-02-07.
  */
 
-public class MapLevel {
+public class Map {
     private String name;
     private String bgm_name;
     private String bg_image;
 
     // Maybe Pass a data structure with all the infos
-    public MapLevel(){}
+    public Map(){}
 
     // Getter Methods
     public String getName(){

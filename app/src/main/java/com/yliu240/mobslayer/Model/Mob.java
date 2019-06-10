@@ -9,15 +9,13 @@ public class Mob {
     private int total_hp;
     private int current_hp;
     private int exp;
-    private int offsetX;
-    private int offsetY;
+    private int width;
+    private int height;
 
     private String move;
-    private String spawn;
     private String death;
     private String hit;
 
-    private String spawn_sound;
     private String death_sound;
     private String hit_sound;
 
@@ -37,26 +35,20 @@ public class Mob {
     public int getExp(){
         return this.exp;
     }
-    public int getOffsetX(){
-        return this.offsetX;
+    public int getWidth(){
+        return this.width;
     }
-    public int getOffsetY(){
-        return this.offsetY;
+    public int getHeight(){
+        return this.height;
     }
     public String getMove(){
         return this.move;
-    }
-    public String getSpawn(){
-        return this.spawn;
     }
     public String getDeath(){
         return this.death;
     }
     public String getHit(){
         return this.hit;
-    }
-    public String getSpawn_sound(){
-        return this.spawn_sound;
     }
     public String getDeath_sound(){
         return this.death_sound;
@@ -79,26 +71,20 @@ public class Mob {
     public void setExp(int exp){
         this.exp = exp;
     }
-    public void setOffsetX(int x){
-        this.offsetX = x;
+    public void setWidth(int x){
+        this.width = x;
     }
-    public void setOffsetY(int y){
-        this.offsetY = y;
+    public void setHeight(int y){
+        this.height = y;
     }
     public void setMove(String move){
         this.move = move;
-    }
-    public void setSpawn(String spawn){
-        this.spawn = spawn;
     }
     public void setDeath(String death){
         this.death = death;
     }
     public void setHit(String hit){
         this.hit = hit;
-    }
-    public void setSpawn_sound(String spawn_sound){
-        this.spawn_sound = spawn_sound;
     }
     public void setDeath_sound(String death_sound){
         this.death_sound = death_sound;
