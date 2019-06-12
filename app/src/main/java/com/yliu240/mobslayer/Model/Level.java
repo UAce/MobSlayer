@@ -6,9 +6,14 @@ package com.yliu240.mobslayer.Model;
 
 public class Level {
     private String name;
-    private String icon_enable;
-    private String icon_disable;
-    private String sound_effect;
+    private String bgm_name;
+    private String bg_image;
+    private int prev;
+    private int next;
+    private int map;
+    private int[] mobs;
+    private int boss;
+    private int[] skills;
 
     // Maybe Pass a data structure with all the infos
     public Level(){}
@@ -17,19 +22,44 @@ public class Level {
     public String getName(){
         return this.name;
     }
-    public String getIcon_enable(){
-        return this.icon_enable;
+    public String getBgm_name(){
+        return this.bgm_name;
     }
-    public String getIcon_disable(){
-        return this.icon_disable;
+    public String getBg_image(){
+        return this.bg_image;
     }
-    public String getSound_effect(){
-        return this.sound_effect;
+    public int getPrev(){
+        return this.prev;
+    }
+    public int getNext(){
+        return this.next;
+    }
+    public int getMap(){
+        return this.map;
+    }
+    public int[] getMobs(){
+        return this.mobs;
+    }
+    public int getBoss(){ return this.boss; }
+    public int[] getSkills(){
+        return this.skills;
     }
 
     // Setter Methods
     public void setName(String name){
         this.name = name;
+    }
+    public void setBgm_name(String bgm_name){
+        this.bgm_name = bgm_name;
+    }
+    public void setBg_image(String bg_image){
+        this.bg_image = bg_image;
+    }
+    public void setPrev(int id){
+        this.prev = id;
+    }
+    public void setNext(int id){
+        this.next = id;
     }
 
 }

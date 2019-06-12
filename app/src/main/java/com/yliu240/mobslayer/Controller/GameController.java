@@ -22,14 +22,10 @@ public class GameController {
 
     private static final String TAG = "DEBUG";
     // Fields in JSON file
-    @SerializedName("map_info")
-    private List<Map> maps = new ArrayList<>();
-    private int current_mapId;
-    @SerializedName("mob_info")
-    private List<Mob> mobs = new ArrayList<>();
-    private int current_mobId;
     @SerializedName("player_info")
     private Player myPlayer = Player.getInstance(); //Singleton
+    @SerializedName("mob_info")
+    private List<Mob> mobs = new ArrayList<>();
     @SerializedName("level_info")
     private List<Level> levels = new ArrayList<>();
     @SerializedName("skill_info")
@@ -39,13 +35,14 @@ public class GameController {
     @Expose(serialize = false, deserialize = false)
     private Mob current_mob = new Mob();
     @Expose(serialize = false, deserialize = false)
-    private Map current_map = new Map();
-    @Expose(serialize = false, deserialize = false)
-    private Mob currentMob;
+    private Level current_level = new Level();
+    private int current_levelId;
+    private int current_mobId;
+    private int current_mobHp;
 
     private static GameController gameControllerInstance;
 
-    private GameController() {}
+    private GameController() { }
 
     public static synchronized GameController getInstance(){
         if(gameControllerInstance == null){
@@ -56,6 +53,7 @@ public class GameController {
 
     static public synchronized void setInstance(GameController newInstance) {
         gameControllerInstance = newInstance;
+
     }
 
 
@@ -63,11 +61,11 @@ public class GameController {
     public List<Skill> getSkills(){
         return this.skills;
     }
-    public List<Map> getMaps(){
-        return this.maps;
-    }
     public List<Mob> getMobs(){
         return this.mobs;
+    }
+    public List<Level> getLevels(){
+        return this.levels;
     }
     public Player getPlayer() {
         return this.myPlayer;
@@ -75,62 +73,52 @@ public class GameController {
     public int getCurrent_mobId(){
         return this.current_mobId;
     }
-    public int getCurrent_mapId(){
-        return this.current_mapId;
+    public int getCurrent_levelId(){
+        return this.current_levelId;
     }
     public Mob getCurrent_mob(){
         return this.current_mob;
     }
-    public Map getCurrent_map(){
-        return this.current_map;
+    public Level getCurrent_level(){
+        return this.current_level;
     }
 
 
     //Setter methods
     public void setCurrent_mobId(int idx){
         this.current_mobId = idx;
+        setCurrent_mob();
     }
-    public void setCurrent_mapId(int idx){
-        this.current_mapId = idx;
+    public void setCurrent_levelId(int idx){
+        this.current_levelId = idx;
+        setCurrent_level();
     }
-    public void setCurrent_mob(int idx){
-        //TODO: find a way to level up monster when player levels up
-        int multiplier = getPlayer().getLevel();
-        Mob new_mob = mobs.get(idx);
-        this.current_mob.setName(new_mob.getName());
-        this.current_mob.setTotal_hp(new_mob.getTotal_hp()*multiplier);
-        this.current_mob.setCurrent_hp(new_mob.getCurrent_hp()*multiplier);
-        this.current_mob.setExp(new_mob.getExp()*multiplier);
-        this.current_mob.setWidth(new_mob.getWidth());
-        this.current_mob.setHeight(new_mob.getHeight());
-        this.current_mob.setMove(new_mob.getMove());
-        this.current_mob.setDeath(new_mob.getDeath());
-        this.current_mob.setHit(new_mob.getHit());
-        this.current_mob.setDeath_sound(new_mob.getDeath_sound());
-        this.current_mob.setHit_sound(new_mob.getHit_sound());
+    public void setCurrent_mob(){
+        this.current_mob = mobs.get(this.current_mobId);
     }
-
-    public void setCurrent_map(){
-        Map new_map = maps.get(this.current_mapId);
-        this.current_map.setName(new_map.getName());
-        this.current_map.setBg_image(new_map.getBg_image());
-        this.current_map.setBgm_name(new_map.getBgm_name());
+    public void setCurrent_level(){
+        this.current_level = levels.get(this.current_levelId);
     }
 
 
     // Game Methods
-    public void switch_map(boolean right){
-        int mapId = this.current_mapId;
-        int len = this.maps.size();
-        if(right){
-            mapId+=1;
-        }else{
-            mapId-=1;
-        }
-        int newMapId = (((mapId % len) + len) % len);
+    public void setProperties(){
+        setCurrent_mob();
+        setCurrent_level();
+    }
 
-        setCurrent_mapId(newMapId);
-        setCurrent_map();
+    public void updateLevel(int nextId){
+        int currId = nextId-1;
+        Level lvl = levels.get(currId);
+        lvl.setNext(nextId);
+        levels.set(currId, lvl); // is this necessary?
+        this.current_levelId = nextId;
+        setCurrent_level();
+    }
+
+    public void switch_level(int id){
+        setCurrent_levelId(id);
+        setCurrent_level();
     }
     
     public void getNewMob(){
@@ -159,7 +147,7 @@ public class GameController {
         if(damage > 999999){
             damage = 999999;
         }
-        current_mob.takeDamage(damage);
+        this.current_mob.takeDamage(damage);
         return new Pair<>(damage, critical);
     }
 
@@ -181,5 +169,13 @@ public class GameController {
 
     public Skill getSkill(int id){
         return skills.get(id);
+    }
+
+    public Mob getMob(int id){
+        return mobs.get(id);
+    }
+
+    public Boolean hasNextLevel(){
+        return getLevels().size() >= myPlayer.getLevel();
     }
 }

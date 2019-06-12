@@ -157,67 +157,78 @@
             android:background="@color/transparentGray"
             app:srcCompat="@drawable/baseline_volume_up_24" />
 
-        <ImageButton
-            android:id="@+id/skill_0"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/bottom_bar"
-            android:layout_alignParentEnd="true"
-            android:background="@drawable/sharp_eyes_enable"
-            android:visibility="visible" />
+        <!--<ImageButton-->
+            <!--android:id="@+id/skill_0"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_above="@+id/bottom_bar"-->
+            <!--android:layout_alignParentEnd="true"-->
+            <!--android:visibility="visible" />-->
 
-        <ImageButton
-            android:id="@+id/skill_1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/bottom_bar"
-            android:layout_toStartOf="@+id/skill_0"
-            android:visibility="invisible" />
+        <!--<ImageButton-->
+            <!--android:id="@+id/skill_1"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_above="@+id/bottom_bar"-->
+            <!--android:layout_toStartOf="@+id/skill_0"-->
+            <!--android:visibility="invisible" />-->
 
-        <ImageButton
-            android:id="@+id/skill_2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/bottom_bar"
-            android:layout_toStartOf="@+id/skill_1"
-            android:visibility="invisible" />
+        <!--<ImageButton-->
+            <!--android:id="@+id/skill_2"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_above="@+id/bottom_bar"-->
+            <!--android:layout_toStartOf="@+id/skill_1"-->
+            <!--android:visibility="invisible" />-->
+
+        <!--<ImageButton-->
+            <!--android:id="@+id/right_arrow"-->
+            <!--android:layout_width="30dp"-->
+            <!--android:layout_height="40dp"-->
+            <!--android:background="@android:color/transparent"-->
+            <!--app:srcCompat="@drawable/right_arrow"-->
+            <!--android:layout_marginTop="65dp"-->
+            <!--android:layout_below="@+id/mob_hp"-->
+            <!--android:layout_alignStart="@+id/skill_0"-->
+            <!--android:visibility="invisible"/>-->
+        <!--<ImageButton-->
+            <!--android:id="@+id/left_arrow"-->
+            <!--android:layout_width="30dp"-->
+            <!--android:layout_height="40dp"-->
+            <!--android:layout_alignParentStart="true"-->
+            <!--android:layout_alignTop="@+id/right_arrow"-->
+            <!--android:background="@android:color/transparent"-->
+            <!--app:srcCompat="@drawable/left_arrow"-->
+            <!--android:visibility="invisible"/>-->
 
         <ImageButton
             android:id="@+id/right_arrow"
             android:layout_width="30dp"
             android:layout_height="40dp"
-            android:background="@android:color/transparent"
+            android:background="@color/transparentGray"
             app:srcCompat="@drawable/right_arrow"
-            android:layout_marginTop="65dp"
-            android:layout_below="@+id/mob_hp"
-            android:layout_alignStart="@+id/skill_0" />
+            android:layout_centerInParent="true"
+            android:layout_alignParentEnd="true"
+            android:visibility="invisible"/>
 
         <ImageButton
             android:id="@+id/left_arrow"
             android:layout_width="30dp"
             android:layout_height="40dp"
             android:layout_alignParentStart="true"
-            android:layout_alignTop="@+id/right_arrow"
-            android:background="@android:color/transparent"
-            app:srcCompat="@drawable/left_arrow" />
+            android:layout_centerInParent="true"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/left_arrow"
+            android:visibility="invisible"/>
 
-        <!--<LinearLayout-->
-        <!--android:id="@+id/buff_status"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_alignParentEnd="true"-->
-        <!--android:layout_alignParentTop="true"-->
-        <!--android:orientation="horizontal">-->
+        <LinearLayout
+            android:id="@+id/skills_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_above="@+id/bottom_bar">
 
-        <!--</LinearLayout>-->
-
-
-        <!--<ImageView-->
-        <!--android:id="@+id/imageView3"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_gravity="end"-->
-        <!--app:srcCompat="@drawable/sharp_eyes_enable" />-->
+        </LinearLayout>
 
     </RelativeLayout>
 </FrameLayout>
