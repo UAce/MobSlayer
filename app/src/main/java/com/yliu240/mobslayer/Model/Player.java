@@ -1,5 +1,7 @@
 package com.yliu240.mobslayer.Model;
 
+import org.javatuples.Pair;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -14,7 +16,8 @@ public class Player {
     private double attack;
     private double attack_multiplier;
     private double critical_rate;
-    private Boolean buffed=false;
+    private boolean attack_buffed = false;
+    private boolean critical_buffed = false;
 
     private static Player playerInstance;
 
@@ -45,14 +48,11 @@ public class Player {
         return this.attack_multiplier;
     }
     public double getCritical_rate(){
-        if(buffed){
+        if(critical_buffed){
             return this.critical_rate+50;
         }else{
             return this.critical_rate;
         }
-    }
-    public Boolean getBuffed(){
-        return this.buffed;
     }
 
 
@@ -75,24 +75,13 @@ public class Player {
     public void setCritical_rate(double critical_rate){
         this.critical_rate = critical_rate;
     }
-    public void setSkillCoolDown(){
-        if(!this.buffed) {
-            this.buffed = true;
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    buffed = false;
-                }
-            }, 30000);
-        }
-    }
 
     // Other methods
-    public void level_up(){
+    public void levelUp(int newExp){
         this.level+=1;
-        this.attack*=2.5;
-        this.attack_multiplier+=2;
-        this.exp=0;
+        this.attack+=10;
+        this.attack_multiplier+=0.5;
+        this.exp=newExp;
         this.total_exp*=3;
     }
     public String getEXP_toString(){
@@ -101,5 +90,22 @@ public class Player {
 
     public float getEXP_percent() {
         return ((float) this.exp / (float) this.total_exp)*100.0f;
+    }
+
+    // Find a way to generalize this
+    public void sharp_eyes(){
+        if(!this.critical_buffed) {
+            this.critical_buffed = true;
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    critical_buffed = false;
+                }
+            }, 30000);
+        }
+    }
+    public void reset_buff(){
+        this.critical_buffed = false;
+        this.attack_buffed = false;
     }
 }

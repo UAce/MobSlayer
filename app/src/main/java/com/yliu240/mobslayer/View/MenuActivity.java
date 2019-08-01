@@ -28,28 +28,37 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+
 import com.google.gson.Gson;
 
 import com.yliu240.mobslayer.Controller.GameController;
-import com.yliu240.mobslayer.View.R;
 
 public class MenuActivity extends AppCompatActivity {
 
-    private Boolean sound_muted;
+    private Boolean sound_muted, music_muted;
     private FrameLayout menuFrame;
     private Context mContext;
     private RelativeLayout menuBoard;
-    private ImageButton new_game, load_game, sound;
+    private ImageButton new_game, load_game, sound, music;
     private MediaPlayer bgm;
     private static final String RAW = "raw";
     private Pair<SoundPool, Integer> button_pressed;
     private GameController gcInstance;
+    //Log.d("[DEBUG] @@@@@@@@@@@:", "debug message");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
-
+        Intent intent = getIntent();
+        sound_muted = Boolean.FALSE;
+        music_muted = Boolean.FALSE;
+        if(intent.hasExtra("SOUND_MUTED")){
+            sound_muted = getIntent().getExtras().getBoolean("SOUND_MUTED");
+        }
+        if (intent.hasExtra("MUSIC_MUTED")) {
+            music_muted = getIntent().getExtras().getBoolean("MUSIC_MUTED");
+        }
         gcInstance = GameController.getInstance();
 
         Typeface comic_sans = Typeface.createFromAsset(getAssets(), "comic-sans-ms-bold.ttf");
@@ -69,7 +78,7 @@ public class MenuActivity extends AppCompatActivity {
 
         // Set sounds
         sound = findViewById(R.id.sound);
-        sound_muted = Boolean.FALSE;
+        music = findViewById(R.id.music);
         createBgm();
         button_pressed = loadSound("button_pressed");
 
@@ -101,6 +110,9 @@ public class MenuActivity extends AppCompatActivity {
                     Bundle bundle = ActivityOptionsCompat.makeCustomAnimation(mContext,
                             android.R.anim.fade_in, android.R.anim.fade_out).toBundle();
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                    intent.putExtra("SOUND_MUTED", sound_muted);
+                    intent.putExtra("MUSIC_MUTED", music_muted);
+                    clearMediaPlayerAndSoundPool();
                     startActivity(intent, bundle);
                     finish();
                 } catch (InterruptedException e) {
@@ -115,22 +127,25 @@ public class MenuActivity extends AppCompatActivity {
         super.onStart();
         startBgmListener();
         if(sound_muted){
+            sound.setImageResource(R.drawable.baseline_volume_off_24);
+        }
+        if(music_muted){
+            music.setImageResource(R.drawable.round_music_off_24);
             bgm.pause();
         }
     }
     @Override
     protected void onPause() {
         super.onPause();
-        bgm.pause();
-        sound.setOnClickListener(null);
+        if(bgm != null){
+            bgm.pause();
+        }
         clearListeners();
         System.gc();
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        bgm.stop();
-        sound.setOnClickListener(null);
         clearListeners();
         System.gc();
     }
@@ -141,27 +156,25 @@ public class MenuActivity extends AppCompatActivity {
         startBgmListener();
         setListeners();
         if(!sound_muted){
+            sound.setImageResource(R.drawable.baseline_volume_up_24);
+        }
+        if(!music_muted){
+            music.setImageResource(R.drawable.round_music_note_24);
             bgm.start();
         }
     }
 
-    // Parse currentGameInfo.json file and set gameController instance
     private void loadJson(Boolean loadGame) {
-//        Log.d("[DEBUG] @@@@@@@@@@@:", "Pressed..");
         playSoundEffect(button_pressed);
         Gson gson = new Gson();
         InputStream ims;
         try {
             if(loadGame && fileExists(mContext, "currentGameInfo.json")){
-//                Log.d("[DEBUG] @@@@@@@@@@@:", "Trying to load game");
                 ims = openFileInput("currentGameInfo.json");
             }else if(!loadGame){
-//                Log.d("[DEBUG] @@@@@@@@@@@:", "Trying to create new game");
                 AssetManager assetManager = getAssets();
                 ims = assetManager.open("newGameInfo.json");
             }else{
-//                Log.d("[DEBUG] @@@@@@@@@@@:", "Failed to start game");
-                // Display Error message?
                 setListeners();
                 return;
             }
@@ -184,12 +197,24 @@ public class MenuActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!sound_muted) {
                     sound.setImageResource(R.drawable.baseline_volume_off_24);
-                    bgm.pause();
                     sound_muted=true;
                 } else {
                     sound.setImageResource(R.drawable.baseline_volume_up_24);
-                    bgm.start();
                     sound_muted=false;
+                }
+            }
+        });
+        music.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!music_muted) {
+                    music.setImageResource(R.drawable.round_music_off_24);
+                    bgm.pause();
+                    music_muted=true;
+                } else {
+                    music.setImageResource(R.drawable.round_music_note_24);
+                    bgm.start();
+                    music_muted=false;
                 }
             }
         });
@@ -200,7 +225,9 @@ public class MenuActivity extends AppCompatActivity {
      * @param sfx Pair<SoundPool, Integer> of a sound effect
      */
     private void playSoundEffect(Pair<SoundPool, Integer> sfx) {
-        sfx.getValue0().play(sfx.getValue1(), 1.0F, 1.0F, 0, 0, 1.0F);
+        if(!sound_muted){
+            sfx.getValue0().play(sfx.getValue1(), 1.0F, 1.0F, 0, 0, 1.0F);
+        }
     }
 
     /**
@@ -231,10 +258,10 @@ public class MenuActivity extends AppCompatActivity {
         }
         bgm = MediaPlayer.create(mContext, getResourceId("recollecting_memories", "raw"));
         bgm.setLooping(true);
-        if(sound_muted){
-            return;
-        }
         bgm.start();
+        if(music_muted){
+            bgm.pause();
+        }
     }
 
     /**
@@ -273,5 +300,13 @@ public class MenuActivity extends AppCompatActivity {
     private void clearListeners(){
         new_game.setOnClickListener(null);
         load_game.setOnClickListener(null);
+        sound.setOnClickListener(null);
+    }
+
+    private void clearMediaPlayerAndSoundPool(){
+        bgm.stop();
+        bgm.release();
+        bgm = null;
+        button_pressed.getValue0().release();
     }
 }

@@ -12,8 +12,7 @@
         android:theme="@style/AppTheme"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize">
         <activity
-            android:name="SplashScreenActivity"
-            android:screenOrientation="portrait">
+            android:name="SplashScreenActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.VIEW" />

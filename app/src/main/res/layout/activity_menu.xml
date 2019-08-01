@@ -10,8 +10,6 @@
     <ImageView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
         android:scaleType="centerCrop"
         android:src="@drawable/menu_background" />
 
@@ -23,8 +21,18 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
+            android:layout_marginBottom="10dp"
             android:background="@color/transparentGray"
             app:srcCompat="@drawable/baseline_volume_up_24" />
+
+        <ImageButton
+            android:id="@+id/music"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/sound"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/round_music_note_24" />
     </RelativeLayout>
 
     <RelativeLayout

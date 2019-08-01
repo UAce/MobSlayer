@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="25dp"
-            android:background="@color/hp_bgColor"
+            android:background="@color/transparentDarkGrey"
             android:visibility="invisible">
 
             <TextView
@@ -154,58 +154,45 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
+            android:layout_marginBottom="10dp"
             android:background="@color/transparentGray"
             app:srcCompat="@drawable/baseline_volume_up_24" />
 
-        <!--<ImageButton-->
-            <!--android:id="@+id/skill_0"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_above="@+id/bottom_bar"-->
-            <!--android:layout_alignParentEnd="true"-->
-            <!--android:visibility="visible" />-->
+        <ImageButton
+            android:id="@+id/music"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="10dp"
+            android:layout_below="@+id/sound"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/round_music_note_24" />
 
-        <!--<ImageButton-->
-            <!--android:id="@+id/skill_1"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_above="@+id/bottom_bar"-->
-            <!--android:layout_toStartOf="@+id/skill_0"-->
-            <!--android:visibility="invisible" />-->
+        <ImageButton
+            android:id="@+id/menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="10dp"
+            android:layout_below="@+id/music"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/baseline_menu_24" />
 
-        <!--<ImageButton-->
-            <!--android:id="@+id/skill_2"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_above="@+id/bottom_bar"-->
-            <!--android:layout_toStartOf="@+id/skill_1"-->
-            <!--android:visibility="invisible" />-->
+        <ImageButton
+            android:id="@+id/save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@+id/menu"
+            android:background="@color/transparentGray"
+            app:srcCompat="@drawable/baseline_save_24" />
 
-        <!--<ImageButton-->
-            <!--android:id="@+id/right_arrow"-->
-            <!--android:layout_width="30dp"-->
-            <!--android:layout_height="40dp"-->
-            <!--android:background="@android:color/transparent"-->
-            <!--app:srcCompat="@drawable/right_arrow"-->
-            <!--android:layout_marginTop="65dp"-->
-            <!--android:layout_below="@+id/mob_hp"-->
-            <!--android:layout_alignStart="@+id/skill_0"-->
-            <!--android:visibility="invisible"/>-->
-        <!--<ImageButton-->
-            <!--android:id="@+id/left_arrow"-->
-            <!--android:layout_width="30dp"-->
-            <!--android:layout_height="40dp"-->
-            <!--android:layout_alignParentStart="true"-->
-            <!--android:layout_alignTop="@+id/right_arrow"-->
-            <!--android:background="@android:color/transparent"-->
-            <!--app:srcCompat="@drawable/left_arrow"-->
-            <!--android:visibility="invisible"/>-->
 
         <ImageButton
             android:id="@+id/right_arrow"
             android:layout_width="30dp"
             android:layout_height="40dp"
-            android:background="@color/transparentGray"
+            android:background="@color/transparentDarkGrey"
             app:srcCompat="@drawable/right_arrow"
             android:layout_centerInParent="true"
             android:layout_alignParentEnd="true"
@@ -217,7 +204,7 @@
             android:layout_height="40dp"
             android:layout_alignParentStart="true"
             android:layout_centerInParent="true"
-            android:background="@color/transparentGray"
+            android:background="@color/transparentDarkGrey"
             app:srcCompat="@drawable/left_arrow"
             android:visibility="invisible"/>
 

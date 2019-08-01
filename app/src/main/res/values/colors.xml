@@ -39,6 +39,9 @@
     <color name="ArrowColor">#faee44</color>
 
     <!--HpBar background color-->
-    <color name="hp_bgColor">#415b5b5b</color>
+    <color name="transparentDarkGrey">#595B5B5B</color>
+
+    <!--Warning toast bg color-->
+    <color name="warningColor">#FFF455</color>
 
 </resources>

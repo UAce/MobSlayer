@@ -4,7 +4,6 @@ import com.google.gson.annotations.Expose;
 
 import com.google.gson.annotations.SerializedName;
 import com.yliu240.mobslayer.Model.Level;
-import com.yliu240.mobslayer.Model.Map;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
 import com.yliu240.mobslayer.Model.Skill;
@@ -56,7 +55,6 @@ public class GameController {
 
     }
 
-
     // Getter methods
     public List<Skill> getSkills(){
         return this.skills;
@@ -87,7 +85,6 @@ public class GameController {
     //Setter methods
     public void setCurrent_mobId(int idx){
         this.current_mobId = idx;
-        setCurrent_mob();
     }
     public void setCurrent_levelId(int idx){
         this.current_levelId = idx;
@@ -103,22 +100,22 @@ public class GameController {
 
     // Game Methods
     public void setProperties(){
-        setCurrent_mob();
         setCurrent_level();
+        if(getCurrent_mobId() != -1){
+            setCurrent_mob();
+        }
     }
 
     public void updateLevel(int nextId){
         int currId = nextId-1;
         Level lvl = levels.get(currId);
         lvl.setNext(nextId);
-        levels.set(currId, lvl); // is this necessary?
-        this.current_levelId = nextId;
-        setCurrent_level();
+        levels.set(currId, lvl);
+        setCurrent_levelId(nextId);
     }
 
     public void switch_level(int id){
         setCurrent_levelId(id);
-        setCurrent_level();
     }
     
     public void getNewMob(){
@@ -138,7 +135,7 @@ public class GameController {
     }
     
     
-    public Pair<Integer,Boolean> attackMob(){
+    public Pair<Integer,Boolean> attackMob(int skill_multiplier){
         int damage = (int) ThreadLocalRandom.current().nextDouble(myPlayer.getAttack()*0.5,  (myPlayer.getAttack() + 1)*1.5);
         Boolean critical = isCritical();
         if(critical){
@@ -147,19 +144,23 @@ public class GameController {
         if(damage > 999999){
             damage = 999999;
         }
+        if(skill_multiplier != 0){
+            damage *= skill_multiplier;
+        }
         this.current_mob.takeDamage(damage);
         return new Pair<>(damage, critical);
     }
 
-    public Boolean isCritical(){
+    private Boolean isCritical(){
         double critical_rate = ThreadLocalRandom.current().nextInt(0, 100 + 1);
         return critical_rate < myPlayer.getCritical_rate();
     }
 
     public Boolean gainEXP(){
         int new_exp = myPlayer.getExp()+current_mob.getExp();
-        if(new_exp >= myPlayer.getTotal_exp()){
-            myPlayer.level_up();
+        int diff = new_exp - myPlayer.getTotal_exp();
+        if(diff >= 0){
+            myPlayer.levelUp(diff);
             return true;
         }else{
             myPlayer.setExp(new_exp);
@@ -177,5 +178,10 @@ public class GameController {
 
     public Boolean hasNextLevel(){
         return getLevels().size() >= myPlayer.getLevel();
+    }
+
+    public Boolean isBoss(){
+        double boss_rate = ThreadLocalRandom.current().nextInt(0, 100 + 1);
+        return boss_rate < 10;
     }
 }

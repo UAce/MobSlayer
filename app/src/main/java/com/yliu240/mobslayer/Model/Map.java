@@ -9,8 +9,14 @@ public class Map {
     private String bgm_name;
     private String bg_image;
 
+
     // Maybe Pass a data structure with all the infos
     public Map(){}
+    public Map(String name, String bgm_name, String bg_image){
+        this.name = name;
+        this.bgm_name = bgm_name;
+        this.bg_image = bg_image;
+    }
 
     // Getter Methods
     public String getName(){

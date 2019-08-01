@@ -19,3 +19,7 @@ app/src/main/assets
 
 # Ignore screenshots
 screenshots
+
+# Ignore release/debug builds
+app/release
+app/debug
