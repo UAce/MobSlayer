@@ -1,5 +1,7 @@
 package com.yliu240.mobslayer.Model;
 
+import com.google.gson.annotations.Expose;
+
 import org.javatuples.Pair;
 
 import java.util.Timer;
@@ -16,7 +18,9 @@ public class Player {
     private double attack;
     private double attack_multiplier;
     private double critical_rate;
+    @Expose(serialize = false, deserialize = false)
     private boolean attack_buffed = false;
+    @Expose(serialize = false, deserialize = false)
     private boolean critical_buffed = false;
 
     private static Player playerInstance;

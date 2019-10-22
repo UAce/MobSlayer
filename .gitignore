@@ -7,6 +7,7 @@
 /build
 /captures
 .externalNativeBuild
+.idea/
 
 # Ignore sprites and other images
 app/src/main/res/drawable

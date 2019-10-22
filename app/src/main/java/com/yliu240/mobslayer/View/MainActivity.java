@@ -22,7 +22,6 @@ import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -58,9 +57,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.yliu240.mobslayer.Controller.GameController;
+import com.yliu240.mobslayer.Model.Buff;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
-import com.yliu240.mobslayer.Model.Skill;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -183,26 +182,15 @@ public class MainActivity extends AppCompatActivity {
         setGameProperties();
     }
 
-    private void saveJson() {
-        ExclusionStrategy strategy = new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes field) {
-                return (field.getDeclaringClass() == Skill.class && field.getName().equals("in_use")) ||
-                        (field.getDeclaringClass() == Player.class && (field.getName().equals("attack_buffed") || field.getName().equals("critical_buffed")));
-            }
-            @Override
-            public boolean shouldSkipClass(Class<?> clazz) {
-                return false;
-            }
-        };
+    private void saveJSON() {
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting().serializeNulls();
-        Gson gson = builder.addSerializationExclusionStrategy(strategy).create();
-        String newGameInfo = gson.toJson(gc);
+        Gson gson = builder.create();
+        String playerInfo = gson.toJson(gc.getPlayer());
         FileOutputStream outputStream;
         try {
-            outputStream = openFileOutput("currentGameInfo.json", Context.MODE_PRIVATE);
-            outputStream.write(newGameInfo.getBytes());
+            outputStream = openFileOutput("player.json", Context.MODE_PRIVATE);
+            outputStream.write(playerInfo.getBytes());
             outputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -219,11 +207,11 @@ public class MainActivity extends AppCompatActivity {
         miss = loadSound("miss");
         createBgm();
 
-        int[] available_skills = gc.getCurrent_level().getSkills();
-        for (int available_skill : available_skills) {
+        int[] available_buffs = gc.getCurrent_level().getBuffs();
+        for (int buff_id : available_buffs) {
             ImageButton skill_icon = new ImageButton(mContext);
             addSkillIcon(skill_icon);
-            setSkillListener(skill_icon, available_skill);
+            setSkillListener(skill_icon, buff_id);
         }
         mobView = new GifImageView(mContext);
         mobView.setLayoutParams(mob_layout);
@@ -323,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
         }
         sound.setOnClickListener(null);
         music.setOnClickListener(null);
-        saveJson();
+        saveJSON();
         System.gc();
     }
     @Override
@@ -332,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
 
         sound.setOnClickListener(null);
         music.setOnClickListener(null);
-        saveJson();
+        saveJSON();
         System.gc();
     }
     @Override
@@ -430,24 +418,24 @@ public class MainActivity extends AppCompatActivity {
     //Listeners
     @SuppressLint("ClickableViewAccessibility")
     private void setSkillListener(final ImageView iv, int i) {
-        final Skill skill = gc.getSkill(i);
-        skill.resetCooldown();
-        final String skill_name = skill.getName();
-        final String message = skill.getMessage();
-        final int attack_timing = skill.getAttack_timing();
-        final Pair<SoundPool, Integer> s_sfx = loadSound(skill.getSound_effect());
-        final int s_width = skill.getWidth();
-        final int s_height = skill.getHeight();
+        final Buff buff = gc.getSkill(i);
+        buff.resetCooldown();
+        final String skill_name = buff.getName();
+        final String message = buff.getMessage();
+        final int attack_timing = buff.getDuration();
+        final Pair<SoundPool, Integer> s_sfx = loadSound(buff.getSound_effect());
+        final int s_width = buff.getWidth();
+        final int s_height = buff.getHeight();
         iv.setBackgroundResource(getResourceId(skill_name+ENABLE, DRAW));
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!skill.isCooldown()) {
+                if (!buff.getIsCooldown()) {
                     playSoundEffect(s_sfx);
                     iv.setBackgroundResource(getResourceId(skill_name+DISABLE, DRAW));
                     iv.invalidate();
-                    skill.setIn_use();
-                    coolDown(iv, skill_name, skill.getCooldown());
+                    buff.startCooldown();
+                    coolDown(iv, skill_name, buff.getCooldown());
                     if (skill_name.equals("sharp_eyes")) {
                         gc.getPlayer().sharp_eyes();
                     }
@@ -465,7 +453,7 @@ public class MainActivity extends AppCompatActivity {
                     checkIfAnimationDone(skill_anim, skill_img, RL);
 
                     if (!message.equals("")) {
-                        createText(message, "skill", 0, 0);
+                        createText(message, "buff", 0, 0);
                     }
                     if (attack_timing != -1) {
                         skillAttack(attack_timing);
@@ -565,7 +553,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void save() {
         if (!saved) {
-            saveJson();
+            saveJSON();
             makeToast("saved");
             saved = true;
         }
@@ -712,7 +700,7 @@ public class MainActivity extends AppCompatActivity {
                         critTop, critBottom, Shader.TileMode.CLAMP);
                 newText.setShadowLayer(0.01f, -2, 2, critTop);
                 break;
-            case "skill":
+            case "buff":
                 shader = new LinearGradient(0, 0, 0, newText.getTextSize(),
                         skillTop, skillBottom, Shader.TileMode.CLAMP);
                 newText.setShadowLayer(0.01f, -2, 2, dmgTop);
@@ -877,11 +865,11 @@ public class MainActivity extends AppCompatActivity {
         checkIfAnimationDone(lvlup_anim, lvlup_img, FL);
         playSoundEffect(levelUp);
         SL.removeAllViews();
-        int[] available_skills = gc.getCurrent_level().getSkills();
-        for (int available_skill : available_skills) {
+        int[] available_buffs = gc.getCurrent_level().getBuffs();
+        for (int buff_id : available_buffs) {
             ImageButton skill_icon = new ImageButton(mContext);
             addSkillIcon(skill_icon);
-            setSkillListener(skill_icon, available_skill);
+            setSkillListener(skill_icon, buff_id);
         }
     }
 

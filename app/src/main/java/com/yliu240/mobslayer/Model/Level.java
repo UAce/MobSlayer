@@ -13,7 +13,7 @@ public class Level {
     private int map;
     private int[] mobs;
     private int boss;
-    private int[] skills;
+    private int[] buffs;
 
     // Maybe Pass a data structure with all the infos
     public Level(){}
@@ -41,8 +41,8 @@ public class Level {
         return this.mobs;
     }
     public int getBoss(){ return this.boss; }
-    public int[] getSkills(){
-        return this.skills;
+    public int[] getBuffs(){
+        return this.buffs;
     }
 
     // Setter Methods

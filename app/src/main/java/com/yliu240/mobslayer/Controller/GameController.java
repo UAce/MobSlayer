@@ -1,14 +1,27 @@
 package com.yliu240.mobslayer.Controller;
 
+import android.content.Context;
+import android.content.res.AssetManager;
+import android.util.Log;
+
+import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
 
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+import com.yliu240.mobslayer.Model.Attack;
+import com.yliu240.mobslayer.Model.Buff;
 import com.yliu240.mobslayer.Model.Level;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
-import com.yliu240.mobslayer.Model.Skill;
 
 import org.javatuples.Pair;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,25 +32,23 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GameController {
 
-    private static final String TAG = "DEBUG";
+    private static final String DEBUG = "DEBUG";
+    private static final String[] JSONFiles = {"levels.json", "mobs.json", "buffs.json", "attacks.json"};
+    private static Gson gson;
+
     // Fields in JSON file
-    @SerializedName("player_info")
     private Player myPlayer = Player.getInstance(); //Singleton
-    @SerializedName("mob_info")
     private List<Mob> mobs = new ArrayList<>();
-    @SerializedName("level_info")
     private List<Level> levels = new ArrayList<>();
-    @SerializedName("skill_info")
-    private List<Skill> skills = new ArrayList<>();
+    private List<Buff> buffs = new ArrayList<>();
+    private List<Attack> attacks = new ArrayList<>();
 
     // Other properties of GameController
-    @Expose(serialize = false, deserialize = false)
     private Mob current_mob = new Mob();
-    @Expose(serialize = false, deserialize = false)
     private Level current_level = new Level();
-    private int current_levelId;
-    private int current_mobId;
-    private int current_mobHp;
+    private int current_levelId = 0;
+    private int current_mobId = 0;
+    private int current_mobHp = 100;
 
     private static GameController gameControllerInstance;
 
@@ -55,9 +66,68 @@ public class GameController {
 
     }
 
+    public void loadJSON(Boolean load, Context mContext) throws IOException{
+        gson = new Gson();
+        AssetManager assetManager = mContext.getAssets();
+        InputStream player_ims;
+        Reader player_reader;
+
+        Log.d(DEBUG, "Loading Game data");
+        for (int i = 0; i < JSONFiles.length - 1; i++) {
+            InputStream ims = assetManager.open(JSONFiles[i]);
+            Reader reader = new InputStreamReader(ims);
+            deserializeJSON(JSONFiles[i], reader);
+        }
+
+        if (load && fileExists(mContext, "player.json")){
+            Log.d(DEBUG, "Loading player data");
+            player_ims = mContext.openFileInput("player.json");
+        } else if(!load){
+            Log.d(DEBUG, "New player data");
+            player_ims = assetManager.open("newPlayer.json");
+        } else {
+            throw new IOException("Cannot load player data: player.json not found.");
+        }
+
+        player_reader = new InputStreamReader(player_ims);
+        myPlayer = gson.fromJson(player_reader, Player.class);
+        Log.d(DEBUG, "Player loaded");
+    }
+
+    private void deserializeJSON(String filename, Reader reader) {
+        switch (filename) {
+            case "levels.json":
+                levels = gson.fromJson(reader, new TypeToken<List<Level>>(){}.getType());
+                Log.d(DEBUG, "Levels loaded");
+                break;
+            case "mobs.json":
+                mobs = gson.fromJson(reader, new TypeToken<List<Mob>>(){}.getType());
+                Log.d(DEBUG, "Mobs loaded");
+                break;
+            case "buffs.json":
+                buffs = gson.fromJson(reader, new TypeToken<List<Buff>>(){}.getType());
+                Log.d(DEBUG, "Buffs loaded");
+                break;
+            case "attacks.json":
+                attacks = gson.fromJson(reader, new TypeToken<List<Attack>>(){}.getType());
+                Log.d(DEBUG, "Attacks loaded");
+                break;
+            default:
+                break;
+        }
+
+    }
+    private boolean fileExists(Context context, String filename) {
+        File file = context.getFileStreamPath(filename);
+        if(file == null || !file.exists()) {
+            return false;
+        }
+        return true;
+    }
+
     // Getter methods
-    public List<Skill> getSkills(){
-        return this.skills;
+    public List<Buff> getBuffs(){
+        return this.buffs;
     }
     public List<Mob> getMobs(){
         return this.mobs;
@@ -168,8 +238,8 @@ public class GameController {
         }
     }
 
-    public Skill getSkill(int id){
-        return skills.get(id);
+    public Buff getSkill(int id){
+        return buffs.get(id);
     }
 
     public Mob getMob(int id){

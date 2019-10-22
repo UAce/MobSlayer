@@ -125,7 +125,7 @@ public class MenuActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        startBgmListener();
+        setListeners();
         if(sound_muted){
             sound.setImageResource(R.drawable.baseline_volume_off_24);
         }
@@ -153,7 +153,6 @@ public class MenuActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         gcInstance = GameController.getInstance();
-        startBgmListener();
         setListeners();
         if(!sound_muted){
             sound.setImageResource(R.drawable.baseline_volume_up_24);
@@ -164,26 +163,13 @@ public class MenuActivity extends AppCompatActivity {
         }
     }
 
-    private void loadJson(Boolean loadGame) {
-        playSoundEffect(button_pressed);
-        Gson gson = new Gson();
-        InputStream ims;
+    private void loadJSON(Boolean loadGame) {
+        gcInstance = GameController.getInstance();
         try {
-            if(loadGame && fileExists(mContext, "currentGameInfo.json")){
-                ims = openFileInput("currentGameInfo.json");
-            }else if(!loadGame){
-                AssetManager assetManager = getAssets();
-                ims = assetManager.open("newGameInfo.json");
-            }else{
-                setListeners();
-                return;
-            }
-            Reader reader = new InputStreamReader(ims);
-            GameController instance = gson.fromJson(reader, GameController.class);
-            GameController.setInstance(instance);
-            gcInstance = GameController.getInstance();
+            gcInstance.loadJSON(loadGame, mContext);
             startTransition();
         } catch (IOException e) {
+            setListeners();
             e.printStackTrace();
         }
     }
@@ -287,7 +273,8 @@ public class MenuActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 clearListeners();
-                loadJson(loadGame);
+                playSoundEffect(button_pressed);
+                loadJSON(loadGame);
             }
         });
     }
@@ -295,6 +282,7 @@ public class MenuActivity extends AppCompatActivity {
     private void setListeners(){
         startClickListener(new_game, false);
         startClickListener(load_game, true);
+        startBgmListener();
     }
 
     private void clearListeners(){
