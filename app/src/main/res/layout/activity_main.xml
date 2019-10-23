@@ -209,13 +209,17 @@
             android:visibility="invisible"/>
 
         <LinearLayout
-            android:id="@+id/skills_layout"
+            android:id="@+id/buffs_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_above="@+id/bottom_bar">
-
-        </LinearLayout>
+            android:layout_above="@+id/bottom_bar"/>
+        <LinearLayout
+            android:id="@+id/attacks_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_above="@+id/buffs_layout"/>
 
     </RelativeLayout>
 </FrameLayout>

@@ -22,6 +22,7 @@ import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -57,9 +58,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.yliu240.mobslayer.Controller.GameController;
+import com.yliu240.mobslayer.Model.Attack;
 import com.yliu240.mobslayer.Model.Buff;
 import com.yliu240.mobslayer.Model.Mob;
 import com.yliu240.mobslayer.Model.Player;
+import com.yliu240.mobslayer.Model.Skill;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -77,17 +80,16 @@ public class MainActivity extends AppCompatActivity {
     private GifDrawable mob_drawable;
     private AnimationListener mobDeath;
     private FrameLayout FL;
-    private FrameLayout.LayoutParams mob_layout;
-    private FrameLayout.LayoutParams level_up_layout;
+    private FrameLayout.LayoutParams mob_layout, level_up_layout;
     private RelativeLayout RL, mob_hp;
-    private RelativeLayout.LayoutParams skill_layout;
-    private RelativeLayout.LayoutParams text_layout;
-    private RelativeLayout.LayoutParams exp_layout;
-    private LinearLayout SL;
+    private RelativeLayout.LayoutParams buff_layout, attack_layout, text_layout, exp_layout;
+    private LinearLayout BL, AL;
     private Typeface comic_sans;
     private Context mContext;
     private Handler mobHandler;
-    private Runnable mobHit;
+    private Runnable mobRecoil;
+    private TimerTask attack_task;
+    private Timer attack_timer;
     private int[] atk_fx = new int[]{R.drawable.b_atk, R.drawable.c_atk};
     private int screenWidth, screenHeight;
     private static final int HIT_SIZE = 250;
@@ -135,7 +137,8 @@ public class MainActivity extends AppCompatActivity {
         mapView = findViewById(R.id.mapView);
         FL = findViewById(R.id.framelayout);
         RL = findViewById(R.id.relayout);
-        SL = findViewById(R.id.skills_layout);
+        BL = findViewById(R.id.buffs_layout);
+        AL = findViewById(R.id.attacks_layout);
         mob_hp = findViewById(R.id.mob_hp);
 
         int frame_layout_wrap = FrameLayout.LayoutParams.WRAP_CONTENT;
@@ -143,11 +146,15 @@ public class MainActivity extends AppCompatActivity {
         mob_layout = new FrameLayout.LayoutParams(frame_layout_wrap, frame_layout_wrap, Gravity.CENTER);
         level_up_layout = new FrameLayout.LayoutParams(frame_layout_wrap, frame_layout_wrap, Gravity.BOTTOM);
         text_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
-        skill_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
-        skill_layout.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        buff_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
+        attack_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
+        buff_layout.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        attack_layout.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        attack_layout.addRule(RelativeLayout.CENTER_VERTICAL);
         exp_layout = new RelativeLayout.LayoutParams(rel_layout_wrap, rel_layout_wrap);
         exp_layout.addRule(RelativeLayout.ABOVE, R.id.bottom_bar);
-        SL.setGravity(Gravity.END);
+        BL.setGravity(Gravity.END);
+        AL.setGravity(Gravity.END);
 
         // Buttons
         sound = findViewById(R.id.sound);
@@ -206,13 +213,7 @@ public class MainActivity extends AppCompatActivity {
         levelUp = loadSound("level_up_effect");
         miss = loadSound("miss");
         createBgm();
-
-        int[] available_buffs = gc.getCurrent_level().getBuffs();
-        for (int buff_id : available_buffs) {
-            ImageButton skill_icon = new ImageButton(mContext);
-            addSkillIcon(skill_icon);
-            setSkillListener(skill_icon, buff_id);
-        }
+        populateSkills();
         mobView = new GifImageView(mContext);
         mobView.setLayoutParams(mob_layout);
         mobView.setImageResource(R.drawable.no_mob);
@@ -280,11 +281,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void addSkillIcon(ImageButton ib) {
+    public void addSkillIcon(ImageButton ib, LinearLayout buff_layout) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.END;
         ib.setLayoutParams(params);
-        SL.addView(ib);
+        buff_layout.addView(ib);
     }
 
     @Override
@@ -417,12 +418,12 @@ public class MainActivity extends AppCompatActivity {
 
     //Listeners
     @SuppressLint("ClickableViewAccessibility")
-    private void setSkillListener(final ImageView iv, int i) {
-        final Buff buff = gc.getSkill(i);
-        buff.resetCooldown();
+    private void setBuffListener(final ImageView iv, int i) {
+        final Buff buff = gc.getBuff(i);
+        buff.resetCooldown(); //find out what this does
         final String skill_name = buff.getName();
         final String message = buff.getMessage();
-        final int attack_timing = buff.getDuration();
+        final int cooldown_time = buff.getCooldown();
         final Pair<SoundPool, Integer> s_sfx = loadSound(buff.getSound_effect());
         final int s_width = buff.getWidth();
         final int s_height = buff.getHeight();
@@ -430,19 +431,17 @@ public class MainActivity extends AppCompatActivity {
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!buff.getIsCooldown()) {
+                if (!buff.getIn_use()) {
                     playSoundEffect(s_sfx);
                     iv.setBackgroundResource(getResourceId(skill_name+DISABLE, DRAW));
                     iv.invalidate();
-                    buff.startCooldown();
-                    coolDown(iv, skill_name, buff.getCooldown());
+                    startCooldown(iv, skill_name, cooldown_time, buff);
                     if (skill_name.equals("sharp_eyes")) {
                         gc.getPlayer().sharp_eyes();
                     }
-
                     ImageView skill_img = new ImageView(getApplicationContext());
                     skill_img.setBackgroundResource(getResourceId(skill_name, DRAW));
-                    skill_img.setLayoutParams(skill_layout);
+                    skill_img.setLayoutParams(buff_layout);
                     skill_img.requestLayout();
                     skill_img.getLayoutParams().height = s_height;
                     skill_img.getLayoutParams().width = s_width;
@@ -455,17 +454,72 @@ public class MainActivity extends AppCompatActivity {
                     if (!message.equals("")) {
                         createText(message, "buff", 0, 0);
                     }
-                    if (attack_timing != -1) {
-                        skillAttack(attack_timing);
-                    }
                 }
             }
         });
     }
 
-    public void coolDown(ImageView iv, String name, int cooldown) {
+    @SuppressLint("ClickableViewAccessibility")
+    private void setAttackListener(final ImageView iv, int i) {
+        final Attack attack = gc.getAttack(i);
+        final String skill_name = attack.getName();
+        final int multiplier = attack.getAttack_multiplier();
+        final int duration = attack.getDuration();
+        final int period = duration/attack.getAttack_count();
+        final long delay = attack.getDelay();
+        final Pair<SoundPool, Integer> s_sfx = loadSound(attack.getSound_effect());
+        final int s_width = attack.getWidth();
+        final int s_height = attack.getHeight();
+        iv.setBackgroundResource(getResourceId(skill_name+ENABLE, DRAW));
+        iv.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!attack.getIn_use()) {
+                    playSoundEffect(s_sfx);
+                    iv.setBackgroundResource(getResourceId(skill_name + DISABLE, DRAW));
+                    iv.invalidate();
+                    attack.setIn_use(true);
+                    startCooldown(iv, skill_name, duration, attack);
+                    ImageView skill_img = new ImageView(getApplicationContext());
+                    skill_img.setBackgroundResource(getResourceId(skill_name, DRAW));
+                    skill_img.setLayoutParams(attack_layout);
+                    skill_img.requestLayout();
+                    skill_img.getLayoutParams().height = s_height;
+                    skill_img.getLayoutParams().width = s_width;
+                    skill_img.setElevation(3);
+                    RL.addView(skill_img);
+                    AnimationDrawable skill_anim = (AnimationDrawable) skill_img.getBackground();
+                    skill_anim.start();
+                    checkIfAnimationDone(skill_anim, skill_img, RL);
+                    attack_timer = new Timer();
+                    attack_task = new TimerTask() {
+                        final long t0 = System.currentTimeMillis();
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (System.currentTimeMillis() - t0 >= duration || current_mob.isDead()) {
+                                        attack_timer.cancel();
+                                        attack_task.cancel();
+                                    } else {
+                                        attackMob(true, screenWidth/2, screenHeight/2, multiplier);
+                                    }
+                                }
+                            });
+                        }
+                    };
+                    attack_timer.scheduleAtFixedRate(attack_task, delay, period);
+                }
+            }
+        });
+    }
+
+    public void startCooldown(ImageView iv, String name, int cooldown, Skill skill_object) {
         final ImageView image = iv;
         final String skill_name = name;
+        final Skill skill = skill_object;
+        skill.setIn_use(true);
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -474,6 +528,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         image.setBackgroundResource(getResourceId(skill_name+ENABLE, DRAW));
                         image.invalidate();
+                        skill.setIn_use(false);
                     }
                 });
             }
@@ -577,9 +632,9 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("ClickableViewAccessibility")
     private void startAttackListener() {
 
-        mobHit = new Runnable() {
+        mobHandler = new Handler();
+        mobRecoil = new Runnable() {
             public void run() {
-                hit = false;
                 FL.removeView(mobView);
                 mobView.setImageResource(getResourceId(current_mob.getMove(), DRAW));
                 FL.addView(mobView, 0);
@@ -598,41 +653,17 @@ public class MainActivity extends AppCompatActivity {
                         if (current_mob.isDead()) {
                             break;
                         }
-                        if (hit) {
-                            mobHandler.removeCallbacks(mobHit);
-                        }
-
-                        // Generate random Damage and create damage Text
-                        Pair<Integer, Boolean> damage = new Pair<>(0, false);
                         int x = (int) event.getRawX();
                         int y = (int) event.getRawY();
                         Rect mob_position = getLocationOnScreen(mobView);
-
-                        if (mob_position.contains(x,y)) {
-                            playSoundEffect(hit_sound);
-                            drawDmg((int) event.getX(), (int) event.getY(), damage.getValue1());
-                            damage = gc.attackMob(0); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
-                            FL.removeView(mobView);
-                            mobView.setImageResource(getResourceId(current_mob.getHit(), DRAW));
-                            FL.addView(mobView, 0);
-                            hit = true;
-                        } else {
-                            playSoundEffect(miss);
-                        }
-                        String type = "";
-                        if (damage.getValue1()) type = "critical";
-
-                        createText(padText(damage.getValue0()), type, x, y);
-                        updateHP();
+                        Boolean isHit = mob_position.contains(x,y);
+                        attackMob(isHit, (int) event.getX(), (int) event.getY(), 0);
                         break;
                     }
                     // Released
                     case MotionEvent.ACTION_UP: {
                         if (current_mob.isDead()) {
                             break;
-                        } else if (hit) {
-                            mobHandler = new Handler();
-                            mobHandler.postDelayed(mobHit, 150);
                         }
                     }
                 }
@@ -646,6 +677,29 @@ public class MainActivity extends AppCompatActivity {
         screenInFrontOfMob.setOnTouchListener(null);
     }
 
+    private void attackMob(Boolean isHit, int x, int y, int multiplier) {
+        mobHandler.removeCallbacks(mobRecoil);
+        // Generate random Damage and create damage Text
+        Pair<Integer, Boolean> damage = new Pair<>(0, false);
+        if (isHit) {
+            playSoundEffect(hit_sound);
+            damage = gc.attackMob(multiplier); //ThreadLocalRandom.current().nextInt(500000, 999999 + 1);
+            drawDmg(x, y, damage.getValue1());
+            FL.removeView(mobView);
+            mobView.setImageResource(getResourceId(current_mob.getHit(), DRAW));
+            FL.addView(mobView, 0);
+        } else {
+            playSoundEffect(miss);
+        }
+        String type = "";
+        if (damage.getValue1() && damage.getValue0() > 0) type = "critical";
+
+        createText(padText(damage.getValue0()), type, x, y);
+        updateHP();
+        if(!current_mob.isDead()) {
+            mobHandler.postDelayed(mobRecoil, 150);
+        }
+    }
     @SuppressLint("ClickableViewAccessibility")
     private void updateHP() {
         if (current_mob.getCurrent_hp() == 0) {
@@ -847,7 +901,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void levelUp() {
-        gc.getPlayer().reset_buff();
+        gc.getPlayer().reset_buff(); //Can this be removed?
         if (gc.hasNextLevel()) {
             gc.updateLevel(gc.getPlayer().getLevel()-1);
             setLevelArrows();
@@ -864,13 +918,7 @@ public class MainActivity extends AppCompatActivity {
         lvlup_anim.start();
         checkIfAnimationDone(lvlup_anim, lvlup_img, FL);
         playSoundEffect(levelUp);
-        SL.removeAllViews();
-        int[] available_buffs = gc.getCurrent_level().getBuffs();
-        for (int buff_id : available_buffs) {
-            ImageButton skill_icon = new ImageButton(mContext);
-            addSkillIcon(skill_icon);
-            setSkillListener(skill_icon, buff_id);
-        }
+        populateSkills();
     }
 
     private void spawnMob() {
@@ -889,6 +937,7 @@ public class MainActivity extends AppCompatActivity {
                 lB.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        FL.removeView(mobView);
                         mobView.setImageResource(getResourceId(current_mob.getMove(), DRAW));
                         FL.addView(mobView);
                         startAttackListener();
@@ -915,6 +964,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void populateSkills() {
+        BL.removeAllViews();
+        AL.removeAllViews();
+        gc.resetSkill();
+        int[] available_buffs = gc.getCurrent_level().getBuffs();
+        for (int buff_id : available_buffs) {
+            ImageButton skill_icon = new ImageButton(mContext);
+            addSkillIcon(skill_icon, BL);
+            setBuffListener(skill_icon, buff_id);
+        }
+        int[] available_attacks = gc.getCurrent_level().getAttacks();
+        for (int attack_id : available_attacks) {
+            ImageButton skill_icon = new ImageButton(mContext);
+            addSkillIcon(skill_icon, AL);
+            setAttackListener(skill_icon, attack_id);
+        }
+    }
     /*
      * Helper functions
      */

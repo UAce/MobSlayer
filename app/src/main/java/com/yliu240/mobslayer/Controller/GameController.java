@@ -72,18 +72,18 @@ public class GameController {
         InputStream player_ims;
         Reader player_reader;
 
-        Log.d(DEBUG, "Loading Game data");
-        for (int i = 0; i < JSONFiles.length - 1; i++) {
+//        Log.d(DEBUG, "Loading Game data");
+        for (int i = 0; i < JSONFiles.length; i++) {
             InputStream ims = assetManager.open(JSONFiles[i]);
             Reader reader = new InputStreamReader(ims);
             deserializeJSON(JSONFiles[i], reader);
         }
 
         if (load && fileExists(mContext, "player.json")){
-            Log.d(DEBUG, "Loading player data");
+//            Log.d(DEBUG, "Loading player data");
             player_ims = mContext.openFileInput("player.json");
         } else if(!load){
-            Log.d(DEBUG, "New player data");
+//            Log.d(DEBUG, "New player data");
             player_ims = assetManager.open("newPlayer.json");
         } else {
             throw new IOException("Cannot load player data: player.json not found.");
@@ -91,26 +91,26 @@ public class GameController {
 
         player_reader = new InputStreamReader(player_ims);
         myPlayer = gson.fromJson(player_reader, Player.class);
-        Log.d(DEBUG, "Player loaded");
+//        Log.d(DEBUG, "Player loaded");
     }
 
     private void deserializeJSON(String filename, Reader reader) {
         switch (filename) {
             case "levels.json":
                 levels = gson.fromJson(reader, new TypeToken<List<Level>>(){}.getType());
-                Log.d(DEBUG, "Levels loaded");
+//                Log.d(DEBUG, "Levels loaded");
                 break;
             case "mobs.json":
                 mobs = gson.fromJson(reader, new TypeToken<List<Mob>>(){}.getType());
-                Log.d(DEBUG, "Mobs loaded");
+//                Log.d(DEBUG, "Mobs loaded");
                 break;
             case "buffs.json":
                 buffs = gson.fromJson(reader, new TypeToken<List<Buff>>(){}.getType());
-                Log.d(DEBUG, "Buffs loaded");
+//                Log.d(DEBUG, "Buffs loaded");
                 break;
             case "attacks.json":
                 attacks = gson.fromJson(reader, new TypeToken<List<Attack>>(){}.getType());
-                Log.d(DEBUG, "Attacks loaded");
+//                Log.d(DEBUG, "Attacks loaded");
                 break;
             default:
                 break;
@@ -238,8 +238,11 @@ public class GameController {
         }
     }
 
-    public Buff getSkill(int id){
+    public Buff getBuff(int id){
         return buffs.get(id);
+    }
+    public Attack getAttack(int id){
+        return attacks.get(id);
     }
 
     public Mob getMob(int id){
@@ -254,4 +257,14 @@ public class GameController {
         double boss_rate = ThreadLocalRandom.current().nextInt(0, 100 + 1);
         return boss_rate < 10;
     }
+
+    public void resetSkill() {
+        for(Buff buff : buffs) {
+            buff.setIn_use(false);
+        }
+        for(Attack attack : attacks) {
+            attack.setIn_use(false);
+        }
+    }
+
 }

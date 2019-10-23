@@ -15,6 +15,7 @@ public class Skill {
     private int duration;
     private int width;
     private int height;
+    private Boolean in_use = false;
 
     // Maybe Pass a data structure with all the infos
     public Skill(){}
@@ -25,10 +26,11 @@ public class Skill {
     public int getDuration() { return this.duration; }
     public int getWidth(){ return this.width; }
     public int getHeight(){ return this.height; }
+    public Boolean getIn_use() { return this.in_use; }
 
     // Setter Methods
     public void setDuration(int duration){ this.duration = duration; }
-
+    public void setIn_use(Boolean in_use){ this.in_use = in_use; }
     public void setName(String name){
             this.name = name;
         }

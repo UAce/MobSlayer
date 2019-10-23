@@ -14,6 +14,7 @@ public class Level {
     private int[] mobs;
     private int boss;
     private int[] buffs;
+    private int[] attacks;
 
     // Maybe Pass a data structure with all the infos
     public Level(){}
@@ -44,6 +45,7 @@ public class Level {
     public int[] getBuffs(){
         return this.buffs;
     }
+    public int[] getAttacks() { return this.attacks; }
 
     // Setter Methods
     public void setName(String name){
