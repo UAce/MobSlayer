@@ -1,11 +1,11 @@
 package com.yliu240.mobslayer.Model;
 
 import com.google.gson.annotations.Expose;
-
 import org.javatuples.Pair;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
 
 /**
  * Created by yu-yu on 2019-02-07.
@@ -18,6 +18,17 @@ public class Player {
     private double attack;
     private double attack_multiplier;
     private double critical_rate;
+
+    // non-player related states
+    private int current_mapId;
+    private int current_mobId;
+    private int current_mobHp;
+    private boolean sound_effect_on;
+    private boolean bg_music_on;
+    private List<Integer> unlocked_maps;
+    private List<Integer> unlocked_buffs;
+    private List<Integer> unlocked_attacks;
+    
     @Expose(serialize = false, deserialize = false)
     private boolean attack_buffed = false;
     @Expose(serialize = false, deserialize = false)
@@ -58,7 +69,14 @@ public class Player {
             return this.critical_rate;
         }
     }
-
+    public boolean getSound_effect_on() { return this.sound_effect_on; }
+    public boolean getBg_music_on() { return this.bg_music_on; }
+    public int getCurrent_mapId(){ return this.current_mapId; }
+    public int getCurrent_mobId(){ return this.current_mobId; }
+    public int getCurrent_mobHp(){ return this.current_mobHp; }
+    public List<Integer> getUnlockedMaps(){ return this.unlocked_maps; }
+    public List<Integer> getUnlockedBuffs(){ return this.unlocked_buffs; }
+    public List<Integer> getUnlockedAttacks(){ return this.unlocked_attacks; }
 
     // Setter Methods
     public void setLevel(int level){
@@ -79,6 +97,22 @@ public class Player {
     public void setCritical_rate(double critical_rate){
         this.critical_rate = critical_rate;
     }
+    public void setCurrent_mapId(int current_mapId) { 
+        this.current_mapId = current_mapId;
+    }
+    public void setCurrent_mobId(int current_mobId) { 
+        this.current_mobId = current_mobId;
+    }
+    public void setCurrent_mobHp(int current_mobHp) { 
+        this.current_mobHp = current_mobHp;
+    }
+    public void setSound_effect_on(boolean sound_effect_on) { 
+        this.sound_effect_on = sound_effect_on;
+    }
+    public void setBg_music_on(boolean bg_music_on) { 
+        this.bg_music_on = bg_music_on;
+    }
+
 
     // Other methods
     public void levelUp(int newExp){
@@ -112,4 +146,28 @@ public class Player {
         this.critical_buffed = false;
         this.attack_buffed = false;
     }
+
+    // Map, Attack, Buff
+    public void unlockMap(int mapId) {
+        this.unlocked_maps.add(mapId);
+    }
+    public void unlockAttackSkill(int attackId) {
+        this.unlocked_attacks.add(attackId);
+    }
+    public void unlockBuffSkill(int buffId) {
+        this.unlocked_buffs.add(buffId);
+    }
+
+    public boolean isMapUnlock(int mapId) {
+        return this.unlocked_maps.contains(mapId);
+    }
+
+    public boolean isBuffUnlocked(int buffId) {
+        return this.unlocked_buffs.contains(buffId);
+    }
+
+    public boolean isAttackUnlocked(int attackId) {
+        return this.unlocked_attacks.contains(attackId);
+    }
+
 }

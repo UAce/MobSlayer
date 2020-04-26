@@ -7,6 +7,7 @@ public class Attack extends Skill {
     private int attack_multiplier;
     private int attack_count;
     private long delay;
+    private int cooldown;
 
     // Maybe Pass a data structure with all the infos
     public Attack(){}
@@ -15,6 +16,7 @@ public class Attack extends Skill {
     public int getAttack_multiplier(){ return this.attack_multiplier; }
     public int getAttack_count(){ return this.attack_count; }
     public long getDelay(){ return this.delay; }
+    public int getCooldown() { return this.cooldown; }
 
     // Setter Methods
 }

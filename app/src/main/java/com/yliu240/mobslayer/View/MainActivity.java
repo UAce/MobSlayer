@@ -52,8 +52,6 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -61,7 +59,6 @@ import com.yliu240.mobslayer.Controller.GameController;
 import com.yliu240.mobslayer.Model.Attack;
 import com.yliu240.mobslayer.Model.Buff;
 import com.yliu240.mobslayer.Model.Mob;
-import com.yliu240.mobslayer.Model.Player;
 import com.yliu240.mobslayer.Model.Skill;
 
 public class MainActivity extends AppCompatActivity {
@@ -87,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
     private Typeface comic_sans;
     private Context mContext;
     private Handler mobHandler;
-    private Runnable mobRecoil;
+    private Runnable mobRecover;
     private TimerTask attack_task;
     private Timer attack_timer;
     private int[] atk_fx = new int[]{R.drawable.b_atk, R.drawable.c_atk};
@@ -190,6 +187,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveJSON() {
+        gc.setCurrent_data();
         GsonBuilder builder = new GsonBuilder();
         builder.setPrettyPrinting().serializeNulls();
         Gson gson = builder.create();
@@ -208,8 +206,8 @@ public class MainActivity extends AppCompatActivity {
         gc = GameController.getInstance();
         gc.setProperties();
 
-        setLevelArrows();
-        mapView.setImageResource(getResourceId(gc.getCurrent_level().getBg_image(), DRAW));
+        setMapNavigation();
+        mapView.setImageResource(getResourceId(gc.getCurrent_map().getBg_image(), DRAW));
         levelUp = loadSound("level_up_effect");
         miss = loadSound("miss");
         createBgm();
@@ -229,15 +227,15 @@ public class MainActivity extends AppCompatActivity {
         ExpBar.setMax(gc.getPlayer().getTotal_exp());
         ExpBar.setProgress(gc.getPlayer().getExp());
 
-        level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gc.getPlayer().getLevel()));
+        level_text.setText(String.format(Locale.CANADA, "%s %d", LV, gc.getPlayer().getLevel())); //TODO GETLEVEL
         exp_val_text.setText(String.valueOf(gc.getPlayer().getExp()));
         exp_percent_text.setText(String.format(Locale.CANADA, " [%.2f%%]", gc.getPlayer().getEXP_percent()));
     }
 
     // Could refactor this to GameController
     private void setMob() {
-        int[] available_mobs = gc.getCurrent_level().getMobs();
-        int bossId = gc.getCurrent_level().getBoss();
+        int[] available_mobs = gc.getCurrent_map().getMobs();
+        int bossId = gc.getCurrent_map().getBoss();
         if (gc.getCurrent_mobId() == -1) {
             int new_mobId;
             if (gc.isBoss() && bossId != -1) {
@@ -247,8 +245,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 new_mobId = available_mobs[ThreadLocalRandom.current().nextInt(0, available_mobs.length)];
             }
-            gc.setCurrent_mobId(new_mobId);
-            gc.setCurrent_mob();
+            gc.setCurrent_mobById(new_mobId);
         }
         current_mob = gc.getCurrent_mob();
         setSoundEffects();
@@ -264,18 +261,20 @@ public class MainActivity extends AppCompatActivity {
         hit = false;
     }
 
-    private void setLevelArrows() {
-        final int prev = gc.getCurrent_level().getPrev();
-        final int next = gc.getCurrent_level().getNext();
-        if (prev != -1) {
+    private void setMapNavigation() {
+        int mapId = gc.getCurrent_mapId();
+        // Left arrow
+        if (mapId > 0) {
             left_arrow.setVisibility(View.VISIBLE);
-            setLevelListener(left_arrow, prev);
+            setMapListener(left_arrow, mapId-1);
         } else {
             left_arrow.setVisibility(View.INVISIBLE);
         }
-        if (next != -1) {
+
+        // Right arrow
+        if (gc.isMapUnlocked(mapId+1)) {
             right_arrow.setVisibility(View.VISIBLE);
-            setLevelListener(right_arrow, next);
+            setMapListener(right_arrow, mapId+1);
         } else {
             right_arrow.setVisibility(View.INVISIBLE);
         }
@@ -397,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
         if (bgm != null) {
             bgm.stop();
         }
-        bgm = MediaPlayer.create(mContext, getResourceId(gc.getCurrent_level().getBgm_name(), "raw"));
+        bgm = MediaPlayer.create(mContext, getResourceId(gc.getCurrent_map().getBgm_name(), "raw"));
         bgm.setLooping(true);
         bgm.start();
         if (music_muted) {
@@ -420,13 +419,13 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("ClickableViewAccessibility")
     private void setBuffListener(final ImageView iv, int i) {
         final Buff buff = gc.getBuff(i);
-        buff.resetCooldown(); //find out what this does
+        buff.resetCooldown(); // TODO: find out what this does
         final String skill_name = buff.getName();
         final String message = buff.getMessage();
-        final int cooldown_time = buff.getCooldown();
+        // final int cooldown_time = buff.getCooldown();
         final Pair<SoundPool, Integer> s_sfx = loadSound(buff.getSound_effect());
-        final int s_width = buff.getWidth();
-        final int s_height = buff.getHeight();
+        // final int s_width = buff.getWidth();
+        // final int s_height = buff.getHeight();
         iv.setBackgroundResource(getResourceId(skill_name+ENABLE, DRAW));
         iv.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -435,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
                     playSoundEffect(s_sfx);
                     iv.setBackgroundResource(getResourceId(skill_name+DISABLE, DRAW));
                     iv.invalidate();
-                    startCooldown(iv, skill_name, cooldown_time, buff);
+                    startCooldown(iv, skill_name, buff.getCooldown(), buff);
                     if (skill_name.equals("sharp_eyes")) {
                         gc.getPlayer().sharp_eyes();
                     }
@@ -443,8 +442,8 @@ public class MainActivity extends AppCompatActivity {
                     skill_img.setBackgroundResource(getResourceId(skill_name, DRAW));
                     skill_img.setLayoutParams(buff_layout);
                     skill_img.requestLayout();
-                    skill_img.getLayoutParams().height = s_height;
-                    skill_img.getLayoutParams().width = s_width;
+                    skill_img.getLayoutParams().height = buff.getHeight();
+                    skill_img.getLayoutParams().width = buff.getWidth();
                     skill_img.setElevation(3);
                     RL.addView(skill_img);
                     AnimationDrawable skill_anim = (AnimationDrawable) skill_img.getBackground();
@@ -465,6 +464,7 @@ public class MainActivity extends AppCompatActivity {
         final String skill_name = attack.getName();
         final int multiplier = attack.getAttack_multiplier();
         final int duration = attack.getDuration();
+        final int cooldown = attack.getCooldown();
         final int period = duration/attack.getAttack_count();
         final long delay = attack.getDelay();
         final Pair<SoundPool, Integer> s_sfx = loadSound(attack.getSound_effect());
@@ -479,7 +479,7 @@ public class MainActivity extends AppCompatActivity {
                     iv.setBackgroundResource(getResourceId(skill_name + DISABLE, DRAW));
                     iv.invalidate();
                     attack.setIn_use(true);
-                    startCooldown(iv, skill_name, duration, attack);
+                    startCooldown(iv, skill_name, cooldown, attack);
                     ImageView skill_img = new ImageView(getApplicationContext());
                     skill_img.setBackgroundResource(getResourceId(skill_name, DRAW));
                     skill_img.setLayoutParams(attack_layout);
@@ -614,13 +614,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setLevelListener(final ImageButton ib, final int id) {
+    private void setMapListener(final ImageButton ib, final int id) {
         ib.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                gc.switch_level(id);
-                mapView.setImageResource(getResourceId(gc.getCurrent_level().getBg_image(), DRAW));
-                setLevelArrows();
+                gc.switchMap(id);
+                setMapNavigation();
+                mapView.setImageResource(getResourceId(gc.getCurrent_map().getBg_image(), DRAW));
                 createBgm();
             }
         });
@@ -633,7 +633,7 @@ public class MainActivity extends AppCompatActivity {
     private void startAttackListener() {
 
         mobHandler = new Handler();
-        mobRecoil = new Runnable() {
+        mobRecover = new Runnable() {
             public void run() {
                 FL.removeView(mobView);
                 mobView.setImageResource(getResourceId(current_mob.getMove(), DRAW));
@@ -678,7 +678,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void attackMob(Boolean isHit, int x, int y, int multiplier) {
-        mobHandler.removeCallbacks(mobRecoil);
+        mobHandler.removeCallbacks(mobRecover);
         // Generate random Damage and create damage Text
         Pair<Integer, Boolean> damage = new Pair<>(0, false);
         if (isHit) {
@@ -697,7 +697,7 @@ public class MainActivity extends AppCompatActivity {
         createText(padText(damage.getValue0()), type, x, y);
         updateHP();
         if(!current_mob.isDead()) {
-            mobHandler.postDelayed(mobRecoil, 150);
+            mobHandler.postDelayed(mobRecover, 500);
         }
     }
     @SuppressLint("ClickableViewAccessibility")
@@ -901,13 +901,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void levelUp() {
-        gc.getPlayer().reset_buff(); //Can this be removed?
-        if (gc.hasNextLevel()) {
-            gc.updateLevel(gc.getPlayer().getLevel()-1);
-            setLevelArrows();
-            mapView.setImageResource(getResourceId(gc.getCurrent_level().getBg_image(), DRAW));
-            createBgm();
+        if (gc.unlockMap()) {
+            setMapNavigation();
         }
+        gc.unlockSkillsByLevel();
         ImageView lvlup_img = new ImageView(mContext);
         lvlup_img.setBackgroundResource(R.drawable.level_up);
         lvlup_img.setLayoutParams(level_up_layout);
@@ -969,14 +966,12 @@ public class MainActivity extends AppCompatActivity {
         BL.removeAllViews();
         AL.removeAllViews();
         gc.resetSkill();
-        int[] available_buffs = gc.getCurrent_level().getBuffs();
-        for (int buff_id : available_buffs) {
+        for (int buff_id : gc.getPlayer().getUnlockedBuffs()) {
             ImageButton skill_icon = new ImageButton(mContext);
             addSkillIcon(skill_icon, BL);
             setBuffListener(skill_icon, buff_id);
         }
-        int[] available_attacks = gc.getCurrent_level().getAttacks();
-        for (int attack_id : available_attacks) {
+        for (int attack_id : gc.getPlayer().getUnlockedAttacks()) {
             ImageButton skill_icon = new ImageButton(mContext);
             addSkillIcon(skill_icon, AL);
             setAttackListener(skill_icon, attack_id);

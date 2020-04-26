@@ -8,7 +8,10 @@ public class Map {
     private String name;
     private String bgm_name;
     private String bg_image;
-
+    private int[] mobs;
+    private int boss;
+    private int[] buffs;
+    private int[] attacks;
 
     // Maybe Pass a data structure with all the infos
     public Map(){}
@@ -19,15 +22,13 @@ public class Map {
     }
 
     // Getter Methods
-    public String getName(){
-        return this.name;
-    }
-    public String getBgm_name(){
-        return this.bgm_name;
-    }
-    public String getBg_image(){
-        return this.bg_image;
-    }
+    public String getName(){ return this.name; }
+    public String getBgm_name(){ return this.bgm_name; }
+    public String getBg_image(){ return this.bg_image; }
+    public int[] getMobs(){ return this.mobs; }
+    public int getBoss(){ return this.boss; }
+    public int[] getBuffs(){ return this.buffs; }
+    public int[] getAttacks() { return this.attacks; }
 
     // Setter Methods
     public void setName(String name){
@@ -39,6 +40,4 @@ public class Map {
     public void setBg_image(String bg_image){
         this.bg_image = bg_image;
     }
-
-
 }

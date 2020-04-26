@@ -60,7 +60,7 @@ public class Mob {
 
     // Setter Methods
     public void setCurrent_hp(int hp){
-         this.current_hp=hp;
+         this.current_hp = hp;
     }
     public void setName(String name){
         this.name = name;
