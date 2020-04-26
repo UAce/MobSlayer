@@ -126,7 +126,6 @@ public class MainActivity extends AppCompatActivity {
         display.getSize(size);
         screenWidth = size.x;
         screenHeight = size.y;
-//        Log.d(DEBUG, String.format("Width: %d  - Height: %d", screenWidth, screenHeight));
 
         // Variables for Layouts, Views
         screenInFrontOfMob = findViewById(R.id.transparent);
@@ -364,10 +363,8 @@ public class MainActivity extends AppCompatActivity {
         SoundPool sound = sfx.getValue0();
         if (streamID != 0) {
             sound.stop(streamID);
-//            Log.d(DEBUG, "stopped sound");
         }
         if (!sound_muted) {
-//            Log.d(DEBUG, "Play sound");
             streamID = sound.play(sfx.getValue1(), 1.0F, 1.0F, 0, 0, 1.0F);
         }
     }
@@ -635,6 +632,9 @@ public class MainActivity extends AppCompatActivity {
         mobHandler = new Handler();
         mobRecover = new Runnable() {
             public void run() {
+                if (current_mob.isDead()) {
+                    return;
+                }
                 FL.removeView(mobView);
                 mobView.setImageResource(getResourceId(current_mob.getMove(), DRAW));
                 FL.addView(mobView, 0);
@@ -697,12 +697,13 @@ public class MainActivity extends AppCompatActivity {
         createText(padText(damage.getValue0()), type, x, y);
         updateHP();
         if(!current_mob.isDead()) {
-            mobHandler.postDelayed(mobRecover, 500);
+            mobHandler.postDelayed(mobRecover, 400);
         }
     }
     @SuppressLint("ClickableViewAccessibility")
     private void updateHP() {
-        if (current_mob.getCurrent_hp() == 0) {
+        if (current_mob.isDead()) {
+            mobHandler.removeCallbacks(mobRecover);
             removeAttackListener();
             isAlive = false;
             isBoss = false;
@@ -802,7 +803,7 @@ public class MainActivity extends AppCompatActivity {
         FL.addView(dmg);
         dmg.setElevation(3);
         dmg.setX(x-HIT_SIZE/2);
-        dmg.setY(y-HIT_SIZE/2);
+        dmg.setY((y-HIT_SIZE/2) - 80);
         AnimationDrawable atkAnimation = (AnimationDrawable) dmg.getBackground();
         atkAnimation.start();
         checkIfAnimationDone(atkAnimation, dmg, FL);
